@@ -1,0 +1,2242 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>لوحة تحكم الطبيب - إدارة الزيارات الطبية</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                dark: "#051815",
+                card: "#0a2f28",
+                teal: "#168374",
+                lightTeal: "#1fa391",
+                gold: "#f1ba33",
+                goldHover: "#d9a320",
+                accent: "#22d3ee",
+              },
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Flatpickr Datepicker -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+      .settings::-webkit-scrollbar{
+        display:none ;
+      }
+      body {
+        background: radial-gradient(
+          circle at top right,
+          #0d3d34 0%,
+          #051815 60%,
+          #020d0b 100%
+        );
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+      }
+
+      .glass-panel {
+        background: rgba(10, 47, 40, 0.88);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(241, 186, 51, 0.35);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      }
+
+      .gold-glow {
+        box-shadow: 0 0 20px rgba(241, 186, 51, 0.25);
+      }
+
+      input[type="checkbox"] {
+        accent-color: #f1ba33;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+      }
+
+      .flatpickr-calendar {
+        background: #0a2f28 !important;
+        border: 1px solid #f1ba33 !important;
+        box-shadow: 0 20px 30px rgba(0, 0, 0, 0.5) !important;
+        margin: auto !important;
+      }
+      .flatpickr-day.selected {
+        background: #f1ba33 !important;
+        color: #051815 !important;
+        font-weight: bold !important;
+      }
+    </style>
+  </head>
+  <body class="text-slate-100 p-3 sm:p-6 md:p-8 min-h-screen pb-28 md:pb-8">
+    <!-- Toast Notification Banner -->
+    <div
+      id="toast"
+      class="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md px-6 py-3 rounded-2xl glass-panel border border-brand-gold text-xs sm:text-sm font-bold text-white shadow-2xl opacity-0 pointer-events-none transition-all duration-300 text-center"
+    >
+      <span id="toast-msg"></span>
+    </div>
+
+    <!-- Header Section -->
+    <header
+      class="max-w-7xl mx-auto mb-6 flex flex-col md:flex-row items-center justify-between gap-4 glass-panel p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-brand-gold/40 text-center md:text-right"
+    >
+      <div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+        <div
+          class="w-12 h-12 sm:w-14 sm:h-14 bg-white rounded-2xl p-1 flex items-center justify-center shrink-0 border border-brand-gold"
+        >
+          <img
+            src="WhatsApp Image 2026-10-03 at 11.23.49 AM.jpeg"
+            alt="لوجو د. أحمد"
+            class="w-full h-full object-contain"
+            onerror="
+              this.src = 'https://cdn-icons-png.flaticon.com/512/387/387561.png'
+            "
+          />
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl md:text-2xl font-black text-brand-gold">
+            لوحة تحكم الطبيب - إدارة الزيارات الطبية
+          </h1>
+          <p class="text-xs text-slate-300">
+            أ.د / أحمد محمد سعيد - استشاري جراحة العظام والمفاصل
+          </p>
+        </div>
+      </div>
+
+      <div
+        class="flex flex-wrap items-center justify-center gap-2 w-full md:w-auto"
+      >
+        <button
+          onclick="openHistoryModal()"
+          class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-amber-400 text-amber-300 font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-md"
+        >
+          📜 سجل المندوب
+        </button>
+        <button
+          onclick="openAddModal()"
+          class="px-3.5 py-2.5 bg-gradient-to-r from-brand-gold to-amber-500 hover:from-amber-500 hover:to-brand-gold text-brand-dark font-black rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-lg gold-glow"
+        >
+          ➕ حجز جديد
+        </button>
+        <button
+          onclick="openCalendarModal()"
+          class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-brand-teal text-brand-teal font-bold rounded-xl text-xs transition-all flex items-center gap-1.5"
+        >
+          📅 التقويم
+        </button>
+        <button
+          onclick="openSettingsModal()"
+          class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-brand-gold/40 text-brand-gold font-bold rounded-xl text-xs transition-all flex items-center gap-1.5"
+        >
+          ⚙️ الإعدادات
+        </button>
+        <button
+          onclick="loadBookings()"
+          class="px-3.5 py-2.5 bg-brand-teal hover:bg-brand-lightTeal text-white font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-lg"
+        >
+          🔄 تحديث
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Full-Width Container -->
+    <main class="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+      <!-- Top Statistics Overview Bar -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div
+          class="glass-panel p-3.5 rounded-2xl border-r-4 border-r-sky-400 flex items-center justify-between"
+        >
+          <div>
+            <span class="text-slate-400 text-[11px] font-bold block"
+              >إجمالي الطلبات</span
+            >
+            <span id="stat-total" class="text-xl font-black text-white">0</span>
+          </div>
+          <span class="text-xl">📋</span>
+        </div>
+        <div
+          class="glass-panel p-3.5 rounded-2xl border-r-4 border-r-amber-400 flex items-center justify-between"
+        >
+          <div>
+            <span class="text-slate-400 text-[11px] font-bold block"
+              >قيد الانتظار</span
+            >
+            <span id="stat-pending" class="text-xl font-black text-amber-400"
+              >0</span
+            >
+          </div>
+          <span class="text-xl">🟡</span>
+        </div>
+        <div
+          class="glass-panel p-3.5 rounded-2xl border-r-4 border-r-emerald-400 flex items-center justify-between"
+        >
+          <div>
+            <span class="text-slate-400 text-[11px] font-bold block"
+              >المقبولة</span
+            >
+            <span id="stat-accepted" class="text-xl font-black text-emerald-400"
+              >0</span
+            >
+          </div>
+          <span class="text-xl">🟢</span>
+        </div>
+        <div
+          class="glass-panel p-3.5 rounded-2xl border-r-4 border-r-rose-400 flex items-center justify-between"
+        >
+          <div>
+            <span class="text-slate-400 text-[11px] font-bold block"
+              >المرفوضة</span
+            >
+            <span id="stat-rejected" class="text-xl font-black text-rose-400"
+              >0</span
+            >
+          </div>
+          <span class="text-xl">🔴</span>
+        </div>
+      </div>
+
+      <!-- Filter, Search & Options Toolbar -->
+      <div
+        class="glass-panel p-4 rounded-2xl flex flex-col md:flex-row gap-3 items-center justify-between"
+      >
+        <div
+          class="flex flex-wrap gap-1.5 w-full md:w-auto justify-center md:justify-start"
+        >
+          <button
+            onclick="setStatusFilter('all')"
+            id="filter-all"
+            class="filter-btn px-3 py-2 rounded-xl text-xs font-bold bg-brand-gold text-brand-dark transition-all"
+          >
+            الكل
+          </button>
+          <button
+            onclick="setStatusFilter('pending')"
+            id="filter-pending"
+            class="filter-btn px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all"
+          >
+            🟡 الانتظار
+          </button>
+          <button
+            onclick="setStatusFilter('accepted')"
+            id="filter-accepted"
+            class="filter-btn px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all"
+          >
+            🟢 المقبولة
+          </button>
+          <button
+            onclick="setStatusFilter('visited')"
+            id="filter-visited"
+            class="filter-btn px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all"
+          >
+            🔵 تمت الزيارة
+          </button>
+          <button
+            onclick="setStatusFilter('rejected')"
+            id="filter-rejected"
+            class="filter-btn px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all"
+          >
+            🔴 المرفوضة
+          </button>
+        </div>
+
+        <div
+          class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto"
+        >
+          <input
+            type="text"
+            id="search-input"
+            placeholder="🔍 بحث بالاسم، الشركة، المستحضر، أو الكود..."
+            oninput="renderTable()"
+            class="w-full sm:w-64 bg-slate-900 border border-brand-teal/50 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-brand-gold"
+          />
+
+          <button
+            onclick="openSortFilterModal()"
+            class="w-full sm:w-auto px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-brand-gold/60 text-brand-gold font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 whitespace-nowrap"
+          >
+            🌪️ خيارات الترتيب والفلترة
+          </button>
+        </div>
+      </div>
+
+      <!-- Active Filter Indicator Bar -->
+      <div
+        id="active-filter-banner"
+        class="hidden glass-panel px-4 py-2 rounded-xl border border-brand-gold/40 flex items-center justify-between text-xs text-brand-gold"
+      >
+        <span id="active-filter-text">تصفية نشطة...</span>
+        <button
+          onclick="resetAllFilters()"
+          class="text-rose-400 font-bold hover:underline"
+        >
+          إلغاء كافة الفلاتر ✕
+        </button>
+      </div>
+
+      <!-- BATCH ACTIONS BAR -->
+      <div
+        id="batch-bar"
+        class="hidden fixed bottom-4 left-4 right-4 z-40 lg:relative lg:bottom-auto lg:left-auto lg:right-auto glass-panel p-4 rounded-2xl border-2 border-brand-gold gold-glow flex flex-col sm:flex-row items-center justify-between gap-3 bg-brand-card/95 shadow-2xl"
+      >
+        <div class="flex items-center gap-3">
+          <span class="w-3 h-3 rounded-full bg-brand-gold animate-ping"></span>
+          <span class="text-xs sm:text-sm font-bold text-white">
+            تم تحديد
+            <span
+              id="selected-count"
+              class="text-brand-gold font-black text-sm sm:text-base px-1"
+              >0</span
+            >
+            زيارة
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 w-full sm:w-auto">
+          <button
+            onclick="batchUpdateStatus('accepted')"
+            class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg flex items-center justify-center gap-1"
+          >
+            🟢 قبول المحددة
+          </button>
+          <button
+            onclick="batchUpdateStatus('visited')"
+            class="px-3 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg flex items-center justify-center gap-1"
+          >
+            🔵 تحديد كـ "تمت الزيارة"
+          </button>
+          <button
+            onclick="batchHideFromTable()"
+            class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-amber-300 font-bold rounded-xl text-xs transition-all shadow-lg flex items-center justify-center gap-1"
+          >
+            👁️‍🗨️ إخفاء من الجدول
+          </button>
+          <button
+            onclick="openBatchRejectModal()"
+            class="px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg flex items-center justify-center gap-1"
+          >
+            🔴 خيارات الرفض...
+          </button>
+        </div>
+      </div>
+
+      <!-- Full-Width Data Table Container -->
+      <div
+        class="glass-panel rounded-3xl overflow-hidden border border-slate-700/60 shadow-2xl w-full"
+      >
+        <div class="overflow-x-auto">
+          <table class="w-full text-right text-xs">
+            <thead
+              class="bg-slate-950/80 text-brand-gold uppercase tracking-wider border-b border-slate-800"
+            >
+              <tr>
+                <th class="p-4 text-center w-10">
+                  <input
+                    type="checkbox"
+                    id="select-all"
+                    onchange="toggleSelectAll(this)"
+                    title="تحديد / إلغاء تحديد الكل"
+                  />
+                </th>
+                <th class="p-4">الكود والخيارات</th>
+                <th class="p-4">المندوب / الرتبة</th>
+                <th class="p-4">التواصل</th>
+                <th class="p-4">الشركة</th>
+                <th class="p-4">المستحضر والمادة والسعر</th>
+                <th class="p-4">تاريخ الموعد</th>
+                <th class="p-4">المرافقون</th>
+                <th class="p-4 text-center" style="width: 128px">الحالة</th>
+                <th class="p-4 text-center">الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody
+              id="bookings-tbody"
+              class="divide-y divide-slate-800/80 text-slate-200"
+            >
+              <tr>
+                <td colspan="10" class="p-8 text-center text-slate-400">
+                  جاري تحميل البيانات...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <!-- MODAL 1: نافذة الاستعلام عن سجل زيارات المندوب -->
+    <div
+      id="history-modal"
+      class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden"
+    >
+      <div
+        class="glass-panel max-w-2xl w-full rounded-3xl p-6 border-2 border-brand-gold gold-glow relative max-h-[90vh] overflow-y-auto"
+      >
+        <div
+          class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4"
+        >
+          <div>
+            <h3 class="font-bold text-brand-gold text-base">
+              📜 سجل الزيارات التاريخي للمندوب
+            </h3>
+            <p class="text-[11px] text-slate-300">
+              أدخل كود المندوب أو اسمه لعرض عدد المرات السابقة وتفاصيلها
+            </p>
+          </div>
+          <button
+            onclick="closeHistoryModal()"
+            class="text-slate-400 hover:text-white font-bold text-lg"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div class="flex gap-2 mb-4">
+          <input
+            type="text"
+            id="history-search-input"
+            placeholder="أدخل الكود (مثال: REP-XXX) أو الاسم..."
+            class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-gold"
+          />
+          <button
+            onclick="performHistoryLookup()"
+            class="px-5 py-2.5 bg-brand-gold hover:bg-brand-goldHover text-brand-dark font-bold text-xs rounded-xl shadow-lg transition-all"
+          >
+            🔍 استعلام
+          </button>
+        </div>
+
+        <div id="history-results-area" class="space-y-4">
+          <div class="text-center text-slate-400 text-xs py-8">
+            أدخل كود المندوب بالشرائط أعلاه واضغط استعلام لعرض سجله بالكامل.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 2: التقويم ونطاق التواريخ -->
+    <div
+      id="calendar-modal"
+      class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden"
+    >
+      <div
+        class="glass-panel max-w-md w-full rounded-3xl p-6 border-2 border-brand-gold gold-glow relative"
+      >
+        <div
+          class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4"
+        >
+          <h3 class="font-bold text-brand-gold text-sm">
+            📅 التقويم وتصفية التواريخ
+          </h3>
+          <button
+            onclick="closeCalendarModal()"
+            class="text-slate-400 hover:text-white font-bold text-lg"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <span class="text-xs font-bold text-slate-300 block mb-2"
+              >1️⃣ خيارات النطاق الزمني:</span
+            >
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                onclick="setDateScope('all')"
+                id="scope-all"
+                class="scope-btn p-2 rounded-xl text-xs font-bold bg-brand-gold text-brand-dark transition-all"
+              >
+                جميع الأوقات
+              </button>
+              <button
+                onclick="setDateScope('today')"
+                id="scope-today"
+                class="scope-btn p-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all"
+              >
+                زيارات اليوم
+              </button>
+              <button
+                onclick="setDateScope('month')"
+                id="scope-month"
+                class="scope-btn p-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all"
+              >
+                هذا الشهر
+              </button>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-800 pt-3">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-slate-300"
+                >2️⃣ اختر يوماً محدداً من التقويم:</span
+              >
+              <button
+                onclick="clearSpecificDate()"
+                class="text-[10px] text-amber-400 font-bold hover:underline"
+              >
+                إلغاء يوم المحدد
+              </button>
+            </div>
+            <div id="inline-calendar" class="flex justify-center"></div>
+          </div>
+
+          <button
+            onclick="closeCalendarModal()"
+            class="w-full py-2.5 bg-brand-gold text-brand-dark font-bold text-xs rounded-xl shadow-lg"
+          >
+            عرض الزيارات المختارة ✨
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 3: خيارات الترتيب والفلترة -->
+    <div
+      id="sort-filter-modal"
+      class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden"
+    >
+      <div
+        class="glass-panel max-w-sm w-full rounded-3xl p-6 border-2 border-brand-gold gold-glow relative space-y-4"
+      >
+        <div
+          class="flex justify-between items-center border-b border-slate-700 pb-3"
+        >
+          <h3 class="font-bold text-brand-gold text-sm">
+            🌪️ خيارات الترتيب والفلترة المتقدمة
+          </h3>
+          <button
+            onclick="closeSortFilterModal()"
+            class="text-slate-400 hover:text-white font-bold text-lg"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div class="space-y-2">
+          <span class="text-xs font-bold text-slate-300 block"
+            >طريقة ترتيب القائمة:</span
+          >
+          <label
+            class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-semibold text-white cursor-pointer"
+          >
+            <input
+              type="radio"
+              name="sort_type"
+              value="time"
+              checked
+              onchange="setSortMode('time')"
+            />
+            حسب أسبقية وتاريخ الحجز (الافتراضي)
+          </label>
+          <label
+            class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-semibold text-white cursor-pointer"
+          >
+            <input
+              type="radio"
+              name="sort_type"
+              value="rank"
+              onchange="setSortMode('rank')"
+            />
+            ⚡ حسب أعلى رتبة وظيفية (CEO والأعلى أولاً)
+          </label>
+          <label
+            class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-semibold text-white cursor-pointer"
+          >
+            <input
+              type="radio"
+              name="sort_type"
+              value="clinic"
+              onchange="setSortMode('clinic')"
+            />
+            📍 المتواجدون بالعيادة حالياً أولاً (In Clinic)
+          </label>
+        </div>
+
+        <div class="space-y-1.5 pt-2 border-t border-slate-800">
+          <span class="text-xs font-bold text-slate-300 block"
+            >تصفية حسب رتبة وظيفية محددة:</span
+          >
+          <select
+            id="rank-filter-select"
+            onchange="setRankFilter(this.value)"
+            class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white"
+          >
+            <option value="all">جميع الرتب الوظيفية</option>
+            <option value="CEO / رئيس مجلس الإدارة">
+              CEO / رئيس مجلس الإدارة
+            </option>
+            <option value="Country Manager / مدير الشركة">
+              Country Manager / مدير الشركة
+            </option>
+            <option value="Business Unit Manager / مدير قطاع">
+              Business Unit Manager / مدير قطاع
+            </option>
+            <option value="Sales Manager / مدير مبيعات">
+              Sales Manager / مدير مبيعات
+            </option>
+            <option value="District Manager / مشرف منطقة">
+              District Manager / مشرف منطقة
+            </option>
+            <option value="Senior Product Specialist / أخصائي منتجات أول">
+              Senior Product Specialist / أخصائي منتجات أول
+            </option>
+            <option value="Senior Medical Rep / أخصائي دعاية أول">
+              Senior Medical Rep / أخصائي دعاية أول
+            </option>
+            <option value="Medical Specialist / أخصائي دعاية طبية">
+              Medical Specialist / أخصائي دعاية طبية
+            </option>
+            <option value="Junior Medical Visitor / زائر طبي جديد">
+              Junior Medical Visitor / زائر طبي جديد
+            </option>
+            <option value="Medical Visitor / زائر طبي">
+              Medical Visitor / زائر طبي
+            </option>
+          </select>
+        </div>
+
+        <button
+          onclick="closeSortFilterModal()"
+          class="w-full py-2.5 bg-brand-gold text-brand-dark font-bold text-xs rounded-xl shadow-lg"
+        >
+          تطبيق التغييرات ✨
+        </button>
+      </div>
+    </div>
+
+    <!-- MODAL 4: إضافة حجز جديد يدوي -->
+    <div
+      id="add-modal"
+      class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden"
+    >
+      <div
+        class="glass-panel max-w-lg w-full rounded-3xl p-6 border-2 border-brand-gold gold-glow relative max-h-[90vh] overflow-y-auto"
+      >
+        <div
+          class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4"
+        >
+          <div>
+            <h3 class="font-bold text-brand-gold text-base">
+              ➕ إضافة حجز زيارة جديد (يدوي)
+            </h3>
+            <p class="text-[11px] text-slate-300">
+              متاح للطبيب تجاوز الحد الأقصى للزيارات اليومية بكل سهولة
+            </p>
+          </div>
+          <button
+            onclick="closeAddModal()"
+            class="text-slate-400 hover:text-white font-bold text-lg"
+          >
+            &times;
+          </button>
+        </div>
+
+        <form
+          onsubmit="handleManualBookingSubmit(event)"
+          class="space-y-3 text-xs"
+        >
+          <div>
+            <label class="block text-slate-300 mb-1 font-bold"
+              >اسم الطبيب / الممثل بالكامل *</label
+            >
+            <input
+              type="text"
+              id="add-name"
+              required
+              placeholder="أدخل اسم المندوب"
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+            />
+          </div>
+
+          <div>
+            <label class="block text-slate-300 mb-1 font-bold"
+              >المسمى الوظيفي / الرتبة *</label
+            >
+            <select
+              id="add-rank"
+              required
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+            >
+              <option value="">اختر المسمى الوظيفي</option>
+              <option value="CEO / رئيس مجلس الإدارة">
+                CEO / رئيس مجلس الإدارة
+              </option>
+              <option value="Country Manager / مدير الشركة">
+                Country Manager / مدير الشركة
+              </option>
+              <option value="Business Unit Manager / مدير قطاع">
+                Business Unit Manager / مدير قطاع
+              </option>
+              <option value="Sales Manager / مدير مبيعات">
+                Sales Manager / مدير مبيعات
+              </option>
+              <option value="District Manager / مشرف منطقة">
+                District Manager / مشرف منطقة
+              </option>
+              <option value="Senior Product Specialist / أخصائي منتجات أول">
+                Senior Product Specialist / أخصائي منتجات أول
+              </option>
+              <option value="Senior Medical Rep / أخصائي دعاية أول">
+                Senior Medical Rep / أخصائي دعاية أول
+              </option>
+              <option value="Medical Specialist / أخصائي دعاية طبية">
+                Medical Specialist / أخصائي دعاية طبية
+              </option>
+              <option value="Junior Medical Visitor / زائر طبي جديد">
+                Junior Medical Visitor / زائر طبي جديد
+              </option>
+              <option value="Medical Visitor / زائر طبي">
+                Medical Visitor / زائر طبي
+              </option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-300 mb-1 font-bold"
+                >البريد الإلكتروني *</label
+              >
+              <input
+                type="email"
+                id="add-email"
+                required
+                placeholder="name@company.com"
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+              />
+            </div>
+            <div>
+              <label class="block text-slate-300 mb-1 font-bold"
+                >رقم الهاتف *</label
+              >
+              <input
+                type="tel"
+                id="add-phone"
+                required
+                placeholder="010XXXXXXXX"
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-slate-300 mb-1 font-bold"
+              >اسم الشركة *</label
+            >
+            <input
+              type="text"
+              id="add-company"
+              required
+              placeholder="اسم شركة الأدوية"
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+            />
+          </div>
+
+          <div>
+            <label class="block text-slate-300 mb-1 font-bold"
+              >اسم المنتج / المستحضر *</label
+            >
+            <input
+              type="text"
+              id="add-product"
+              required
+              placeholder="اسم المستحضر العلمي/التجاري"
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+            />
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-slate-300 mb-1 font-bold"
+                >المادة الفعالة *</label
+              >
+              <input
+                type="text"
+                id="add-molecule"
+                required
+                placeholder="Molecule"
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+              />
+            </div>
+            <div>
+              <label class="block text-slate-300 mb-1 font-bold"
+                >الجرعة *</label
+              >
+              <input
+                type="text"
+                id="add-dosage"
+                required
+                placeholder="500mg"
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+              />
+            </div>
+            <div>
+              <label class="block text-slate-300 mb-1 font-bold"
+                >السعر (ج.م) *</label
+              >
+              <input
+                type="number"
+                step="0.01"
+                id="add-price"
+                required
+                placeholder="0.00"
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-300 mb-1 font-bold"
+                >تاريخ الزيارة *</label
+              >
+              <input
+                type="text"
+                id="add-date"
+                required
+                readonly
+                placeholder="اختر التاريخ..."
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white cursor-pointer"
+              />
+            </div>
+            <div>
+              <label class="block text-slate-300 mb-1 font-bold"
+                >وقت الزيارة *</label
+              >
+              <select
+                id="add-time"
+                required
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+              >
+                <option value="">اختر الوقت</option>
+                <option value="16:00">04:00 مساءً</option>
+                <option value="17:00">05:00 مساءً</option>
+                <option value="18:00">06:00 مساءً</option>
+                <option value="19:00">07:00 مساءً</option>
+                <option value="20:00">08:00 مساءً</option>
+              </select>
+            </div>
+          </div>
+
+          <div
+            class="p-3 bg-brand-teal/20 border border-brand-teal/40 rounded-xl"
+          >
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                id="add-in-clinic"
+                class="w-4 h-4 accent-brand-gold rounded"
+              />
+              <span class="text-xs font-bold text-white"
+                >📍 متواجد حالياً في مقر العيادة</span
+              >
+            </label>
+          </div>
+
+          <div
+            id="add-date-capacity-info"
+            class="p-2.5 rounded-xl bg-slate-900 border border-brand-teal/40 text-[11px] text-slate-300 font-bold hidden"
+          ></div>
+
+          <div class="pt-3 flex gap-2">
+            <button
+              type="submit"
+              id="add-submit-btn"
+              class="flex-1 py-3 bg-brand-gold hover:bg-brand-goldHover text-brand-dark font-black rounded-xl shadow-lg transition-all"
+            >
+              حفظ وتأكيد الحجز ✨
+            </button>
+            <button
+              type="button"
+              onclick="closeAddModal()"
+              class="px-5 py-3 bg-slate-800 text-slate-300 font-bold rounded-xl"
+            >
+              إلغاء
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 5: نافذة الإعدادات -->
+    <div
+      id="settings-modal"
+      class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden"
+    >
+      <div 
+        class="settings glass-panel max-w-lg w-full rounded-3xl p-6 border-2 border-brand-gold gold-glow relative max-h-[90vh] overflow-y-auto"
+      >
+        <div
+          class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4"
+        >
+          <h3 class="font-bold text-brand-gold text-base">
+            ⚙️ إعدادات العيادة وإدارة الشهور المفتوحة
+          </h3>
+          <button
+            onclick="closeSettingsModal()"
+            class="text-slate-400 hover:text-white font-bold text-lg"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div
+          class="space-y-3 mb-6 p-3.5 bg-slate-900/80 rounded-2xl border border-brand-teal/40"
+        >
+          <h4
+            class="text-xs font-bold text-brand-gold border-b border-slate-800 pb-1"
+          >
+            🗓️ نطاق الشهور المتاحة للحجز للمندوبين:
+          </h4>
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            حدد عدد الشهور القادمة التي يمكن للمندوبين الحجز خلالها عبر الصفحة
+            الرئيسية:
+          </p>
+          <select
+            id="open-months-limit"
+            class="w-full bg-slate-950 border border-brand-teal rounded-xl p-2.5 text-xs text-white font-bold"
+          >
+            <option value="1">الشهر الحالي فقط (شهر واحد)</option>
+            <option value="2">
+              شهرين قادمين (الشهر الحالي + الشهر التالي)
+            </option>
+            <option value="3">3 أشهر قادمة</option>
+            <option value="6">6 أشهر قادمة (نصف سنة)</option>
+          </select>
+        </div>
+
+        <div class="space-y-3 mb-6">
+          <h4
+            class="text-xs font-bold text-white border-b border-slate-800 pb-1"
+          >
+            1️⃣ الحد الأقصى الافتراضي لكل يوم من أيام الأسبوع:
+          </h4>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1">السبت:</label>
+              <input
+                type="number"
+                id="cap-sat"
+                min="1"
+                max="50"
+                value="12"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-bold"
+              />
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">الأحد:</label>
+              <input
+                type="number"
+                id="cap-sun"
+                min="1"
+                max="50"
+                value="12"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-bold"
+              />
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">الاثنين:</label>
+              <input
+                type="number"
+                id="cap-mon"
+                min="1"
+                max="50"
+                value="12"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-bold"
+              />
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">الثلاثاء:</label>
+              <input
+                type="number"
+                id="cap-tue"
+                min="1"
+                max="50"
+                value="12"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-bold"
+              />
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">الأربعاء:</label>
+              <input
+                type="number"
+                id="cap-wed"
+                min="1"
+                max="50"
+                value="12"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-bold"
+              />
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">الخميس:</label>
+              <input
+                type="number"
+                id="cap-thu"
+                min="1"
+                max="50"
+                value="12"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-bold"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3 mb-6">
+          <h4
+            class="text-xs font-bold text-white border-b border-slate-800 pb-1"
+          >
+            2️⃣ استثناء تاريخ محدد:
+          </h4>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1">اختر التاريخ:</label>
+              <input
+                type="text"
+                id="override-date-picker"
+                readonly
+                placeholder="حدد التاريخ..."
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white cursor-pointer"
+              />
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1"
+                >الحد الأقصى لهذا اليوم:</label
+              >
+              <input
+                type="number"
+                id="override-count"
+                min="0"
+                max="50"
+                value="6"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-bold"
+              />
+            </div>
+          </div>
+          <button
+            onclick="addDateOverride()"
+            class="w-full py-2 bg-brand-teal hover:bg-brand-lightTeal text-white text-xs font-bold rounded-xl transition-all"
+          >
+            + إضافة استثناء لليوم المحدد
+          </button>
+          <div
+            id="overrides-list"
+            class="space-y-1.5 pt-2 max-h-32 overflow-y-auto"
+          ></div>
+        </div>
+
+        <div class="flex gap-2">
+          <button
+            onclick="saveCapacitySettings()"
+            class="flex-1 py-3 bg-brand-gold hover:bg-brand-goldHover text-brand-dark font-black rounded-xl text-xs shadow-lg transition-all"
+          >
+            حفظ كافة الإعدادات ✨
+          </button>
+          <button
+            onclick="closeSettingsModal()"
+            class="px-5 py-3 bg-slate-800 text-slate-300 font-bold rounded-xl text-xs"
+          >
+            إلغاء
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 6: تعديل البيانات -->
+    <div
+      id="edit-modal"
+      class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden"
+    >
+      <div
+        class="glass-panel max-w-lg w-full rounded-3xl p-6 border-2 border-brand-gold gold-glow relative max-h-[90vh] overflow-y-auto"
+      >
+        <div
+          class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4"
+        >
+          <h3 class="font-bold text-brand-gold text-base">
+            ✏️ تعديل بيانات المندوب والزيارة
+          </h3>
+          <button
+            onclick="closeEditModal()"
+            class="text-slate-400 hover:text-white font-bold text-lg"
+          >
+            &times;
+          </button>
+        </div>
+
+        <form
+          id="edit-form"
+          onsubmit="saveEditedBooking(event)"
+          class="space-y-3 text-xs"
+        >
+          <input type="hidden" id="edit-id" />
+
+          <div>
+            <label class="block text-slate-300 mb-1 font-bold"
+              >اسم الطبيب / الممثل:</label
+            >
+            <input
+              type="text"
+              id="edit-name"
+              required
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+            />
+          </div>
+
+          <div>
+            <label class="block text-slate-300 mb-1 font-bold"
+              >المسمى الوظيفي / الرتبة:</label
+            >
+            <select
+              id="edit-rank"
+              required
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+            >
+              <option value="CEO / رئيس مجلس الإدارة">
+                CEO / رئيس مجلس الإدارة
+              </option>
+              <option value="Country Manager / مدير الشركة">
+                Country Manager / مدير الشركة
+              </option>
+              <option value="Business Unit Manager / مدير قطاع">
+                Business Unit Manager / مدير قطاع
+              </option>
+              <option value="Sales Manager / مدير مبيعات">
+                Sales Manager / مدير مبيعات
+              </option>
+              <option value="District Manager / مشرف منطقة">
+                District Manager / مشرف منطقة
+              </option>
+              <option value="Senior Product Specialist / أخصائي منتجات أول">
+                Senior Product Specialist / أخصائي منتجات أول
+              </option>
+              <option value="Senior Medical Rep / أخصائي دعاية أول">
+                Senior Medical Rep / أخصائي دعاية أول
+              </option>
+              <option value="Medical Specialist / أخصائي دعاية طبية">
+                Medical Specialist / أخصائي دعاية طبية
+              </option>
+              <option value="Junior Medical Visitor / زائر طبي جديد">
+                Junior Medical Visitor / زائر طبي جديد
+              </option>
+              <option value="Medical Visitor / زائر طبي">
+                Medical Visitor / زائر طبي
+              </option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-300 mb-1 font-bold"
+                >البريد الإلكتروني:</label
+              >
+              <input
+                type="email"
+                id="edit-email"
+                required
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+              />
+            </div>
+            <div>
+              <label class="block text-slate-300 mb-1 font-bold"
+                >رقم الهاتف:</label
+              >
+              <input
+                type="tel"
+                id="edit-phone"
+                required
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-slate-300 mb-1 font-bold"
+              >اسم الشركة:</label
+            >
+            <input
+              type="text"
+              id="edit-company"
+              required
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+            />
+          </div>
+
+          <div>
+            <label class="block text-slate-300 mb-1 font-bold"
+              >اسم المستحضر:</label
+            >
+            <input
+              type="text"
+              id="edit-product"
+              required
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+            />
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-slate-300 mb-1 font-bold"
+                >المادة الفعالة:</label
+              >
+              <input
+                type="text"
+                id="edit-molecule"
+                required
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+              />
+            </div>
+            <div>
+              <label class="block text-slate-300 mb-1 font-bold">الجرعة:</label>
+              <input
+                type="text"
+                id="edit-dosage"
+                required
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+              />
+            </div>
+            <div>
+              <label class="block text-slate-300 mb-1 font-bold"
+                >السعر (ج.م):</label
+              >
+              <input
+                type="number"
+                step="0.01"
+                id="edit-price"
+                required
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-300 mb-1 font-bold"
+                >التاريخ:</label
+              >
+              <input
+                type="text"
+                id="edit-date"
+                required
+                readonly
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white cursor-pointer"
+              />
+            </div>
+            <div>
+              <label class="block text-slate-300 mb-1 font-bold">الوقت:</label>
+              <select
+                id="edit-time"
+                required
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+              >
+                <option value="16:00">04:00 مساءً</option>
+                <option value="17:00">05:00 مساءً</option>
+                <option value="18:00">06:00 مساءً</option>
+                <option value="19:00">07:00 مساءً</option>
+                <option value="20:00">08:00 مساءً</option>
+              </select>
+            </div>
+          </div>
+
+          <div
+            class="p-3 bg-brand-teal/20 border border-brand-teal/40 rounded-xl"
+          >
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                id="edit-in-clinic"
+                class="w-4 h-4 accent-brand-gold rounded"
+              />
+              <span class="text-xs font-bold text-white"
+                >📍 متواجد حالياً في مقر العيادة (In Clinic)</span
+              >
+            </label>
+          </div>
+
+          <div class="pt-3 flex gap-2">
+            <button
+              type="submit"
+              class="flex-1 py-3 bg-brand-gold hover:bg-brand-goldHover text-brand-dark font-black rounded-xl shadow-lg transition-all"
+            >
+              حفظ التعديلات ✨
+            </button>
+            <button
+              type="button"
+              onclick="closeEditModal()"
+              class="px-5 py-3 bg-slate-800 text-slate-300 font-bold rounded-xl"
+            >
+              إلغاء
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 7: خيارات الرفض أو الحذف النهائي -->
+    <div
+      id="reject-modal"
+      class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden"
+    >
+      <div
+        class="glass-panel max-w-sm w-full rounded-3xl p-6 border-2 border-rose-500 shadow-2xl text-center space-y-4"
+      >
+        <h3 class="font-bold text-white text-base">
+          🔴 اختر الإجراء المطلوب للزيارة
+        </h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          حدد ما إذا كنت تريد رفض الزيارة أو حذفها نهائياً:
+        </p>
+
+        <div class="space-y-2">
+          <button
+            onclick="confirmRejectAction('normal')"
+            class="w-full py-3 bg-amber-600/30 hover:bg-amber-600 text-amber-200 hover:text-white border border-amber-500/50 rounded-xl font-bold text-xs transition-all text-right px-4"
+          >
+            🛑 <strong>رفض عادي:</strong> يظهر للمندوب "تم الرفض" عند استعلامه
+            بالكود.
+          </button>
+          <button
+            onclick="confirmRejectAction('permanent')"
+            class="w-full py-3 bg-rose-600/30 hover:bg-rose-600 text-rose-200 hover:text-white border border-rose-500/50 rounded-xl font-bold text-xs transition-all text-right px-4"
+          >
+            🗑️ <strong>حذف نهائي:</strong> يمسح الزيارة والكود نهائياً من قاعدة
+            البيانات.
+          </button>
+        </div>
+
+        <button
+          onclick="closeRejectModal()"
+          class="w-full py-2 bg-slate-800 text-slate-400 font-bold text-xs rounded-xl"
+        >
+          إلغاء
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal تفاصيل المرافقين -->
+    <div
+      id="acc-modal"
+      class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden"
+    >
+      <div
+        class="glass-panel max-w-md w-full rounded-3xl p-6 border border-brand-gold relative"
+      >
+        <div
+          class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4"
+        >
+          <h3 class="font-bold text-white text-sm">
+            👥 تفاصيل المرافقين في الزيارة
+          </h3>
+          <button
+            onclick="closeAccModal()"
+            class="text-slate-400 hover:text-white font-bold text-lg"
+          >
+            &times;
+          </button>
+        </div>
+        <div
+          id="acc-modal-content"
+          class="space-y-3 max-h-80 overflow-y-auto text-xs"
+        ></div>
+        <button
+          onclick="closeAccModal()"
+          class="w-full mt-5 bg-brand-gold text-brand-dark font-bold py-2.5 rounded-xl text-xs"
+        >
+          إغلاق
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const SUPABASE_URL = "https://wbsphroluwgmlcqtqfly.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indic3Bocm9sdXdnbWxjcXRxZmx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5NjQ4MzYsImV4cCI6MjEwNjU0MDgzNn0.yPaxMZYbVUxTGOeIGoCOIp_WZ-flg5PXA73lnVzJBbs";
+      const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      const RANK_HIERARCHY = {
+          "CEO / رئيس مجلس الإدارة": 1,
+          "Country Manager / مدير الشركة": 2,
+          "Business Unit Manager / مدير قطاع": 3,
+          "Sales Manager / مدير مبيعات": 4,
+          "District Manager / مشرف منطقة": 5,
+          "Senior Product Specialist / أخصائي منتجات أول": 6,
+          "Senior Medical Rep / أخصائي دعاية أول": 7,
+          "Medical Specialist / أخصائي دعاية طبية": 8,
+          "Junior Medical Visitor / زائر طبي جديد": 9,
+          "Medical Visitor / زائر طبي": 10
+      };
+
+      let allBookings = [];
+      let statusFilter = 'all';
+      let dateScope = 'all';
+      let selectedSpecificDate = null;
+      let sortMode = 'time';
+      let selectedRankFilter = 'all';
+
+      let targetRejectId = null;
+      let isBatchAction = false;
+
+      let capacitySettings = JSON.parse(localStorage.getItem('clinic_capacity_settings')) || {
+          sat: 12, sun: 12, mon: 12, tue: 12, wed: 12, thu: 12,
+          openMonthsLimit: 1,
+          overrides: {}
+      };
+
+      function showToast(message) {
+          const toast = document.getElementById('toast');
+          document.getElementById('toast-msg').textContent = message;
+          toast.classList.remove('opacity-0', 'pointer-events-none');
+          setTimeout(() => {
+              toast.classList.add('opacity-0', 'pointer-events-none');
+          }, 3500);
+      }
+
+      function getCapacityForDate(dateStr) {
+          if (!dateStr) return 12;
+          if (capacitySettings.overrides && capacitySettings.overrides[dateStr] !== undefined) {
+              return parseInt(capacitySettings.overrides[dateStr], 10);
+          }
+          const dateObj = new Date(dateStr);
+          const dayNum = dateObj.getDay();
+          const dayMap = { 6: 'sat', 0: 'sun', 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu' };
+          const dayKey = dayMap[dayNum];
+          return (dayKey && capacitySettings[dayKey] !== undefined) ? parseInt(capacitySettings[dayKey], 10) : 12;
+      }
+
+      async function loadBookings() {
+          try {
+              const { data, error } = await db.from('bookings').select('*').order('id', { ascending: false });
+              if (error) throw error;
+
+              allBookings = data || [];
+              updateStats();
+              renderTable();
+              showToast('تم تحديث البيانات بنجاح');
+          } catch (err) {
+              showToast('حدث خطأ أثناء جلب البيانات: ' + err.message);
+          }
+      }
+
+      function updateStats() {
+          const visibleBookings = allBookings.filter(b => !b.hidden_from_table);
+          document.getElementById('stat-total').textContent = visibleBookings.length;
+          document.getElementById('stat-pending').textContent = visibleBookings.filter(b => (b.status || 'pending') === 'pending').length;
+          document.getElementById('stat-accepted').textContent = visibleBookings.filter(b => b.status === 'accepted').length;
+          document.getElementById('stat-rejected').textContent = visibleBookings.filter(b => b.status === 'rejected').length;
+      }
+
+      function setStatusFilter(filter) {
+          statusFilter = filter;
+          document.querySelectorAll('.filter-btn').forEach(btn => {
+              btn.className = 'filter-btn px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all';
+          });
+          document.getElementById(`filter-${filter}`).className = 'filter-btn px-3 py-2 rounded-xl text-xs font-bold bg-brand-gold text-brand-dark transition-all';
+          renderTable();
+      }
+
+      function setDateScope(scope) {
+          dateScope = scope;
+          selectedSpecificDate = null;
+
+          document.querySelectorAll('.scope-btn').forEach(btn => {
+              btn.className = 'scope-btn p-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all';
+          });
+          document.getElementById(`scope-${scope}`).className = 'scope-btn p-2 rounded-xl text-xs font-bold bg-brand-gold text-brand-dark transition-all';
+
+          renderTable();
+      }
+
+      function clearSpecificDate() {
+          selectedSpecificDate = null;
+          renderTable();
+      }
+
+      function setSortMode(mode) {
+          sortMode = mode;
+          renderTable();
+      }
+
+      function setRankFilter(rank) {
+          selectedRankFilter = rank;
+          renderTable();
+      }
+
+      function resetAllFilters() {
+          statusFilter = 'all';
+          dateScope = 'all';
+          selectedSpecificDate = null;
+          sortMode = 'time';
+          selectedRankFilter = 'all';
+          document.getElementById('search-input').value = '';
+          document.getElementById('rank-filter-select').value = 'all';
+          setStatusFilter('all');
+          setDateScope('all');
+          renderTable();
+      }
+
+      function renderTable() {
+          const tbody = document.getElementById('bookings-tbody');
+          const searchVal = document.getElementById('search-input').value.trim().toLowerCase();
+
+          const now = new Date();
+          const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+          const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+          let filtered = allBookings.filter(item => {
+              if (item.hidden_from_table) return false;
+
+              const st = item.status || 'pending';
+              if (statusFilter !== 'all' && st !== statusFilter) return false;
+
+              if (selectedSpecificDate) {
+                  if (item.Date !== selectedSpecificDate) return false;
+              } else if (dateScope === 'today') {
+                  if (item.Date !== todayStr) return false;
+              } else if (dateScope === 'month') {
+                  if (!item.Date || !item.Date.startsWith(monthStr)) return false;
+              }
+
+              if (selectedRankFilter !== 'all') {
+                  if (item.Rank !== selectedRankFilter) return false;
+              }
+
+              if (searchVal) {
+                  const name = (item.Name || '').toLowerCase();
+                  const company = (item.Company || '').toLowerCase();
+                  const product = (item.Product || '').toLowerCase();
+                  const code = (item.code || '').toLowerCase();
+                  const email = (item.Email || '').toLowerCase();
+                  const phone = (item.Phone || '').toLowerCase();
+                  return name.includes(searchVal) || company.includes(searchVal) || product.includes(searchVal) || code.includes(searchVal) || email.includes(searchVal) || phone.includes(searchVal);
+              }
+              return true;
+          });
+
+          if (sortMode === 'rank') {
+              filtered.sort((a, b) => {
+                  const rA = RANK_HIERARCHY[a.Rank] || 99;
+                  const rB = RANK_HIERARCHY[b.Rank] || 99;
+                  return rA - rB;
+              });
+          } else if (sortMode === 'clinic') {
+              filtered.sort((a, b) => {
+                  const cA = a.in_clinic ? 1 : 0;
+                  const cB = b.in_clinic ? 1 : 0;
+                  return cB - cA;
+              });
+          } else {
+              filtered.sort((a, b) => b.id - a.id);
+          }
+
+          const banner = document.getElementById('active-filter-banner');
+          const bannerText = document.getElementById('active-filter-text');
+          let activeNotes = [];
+          if (selectedSpecificDate) activeNotes.push(`تاريخ: ${selectedSpecificDate}`);
+          else if (dateScope !== 'all') activeNotes.push(`النطاق: ${dateScope === 'today' ? 'اليوم' : 'هذا الشهر'}`);
+          if (selectedRankFilter !== 'all') activeNotes.push(`رتبة: ${selectedRankFilter}`);
+          if (sortMode === 'rank') activeNotes.push(`ترتيب حسب الرتبة`);
+          if (sortMode === 'clinic') activeNotes.push(`ترتيب المتواجدين بالعيادة أولاً`);
+
+          if (activeNotes.length > 0) {
+              bannerText.textContent = `🔍 الفلاتر النشطة: ${activeNotes.join(' | ')}`;
+              banner.classList.remove('hidden');
+          } else {
+              banner.classList.add('hidden');
+          }
+
+          const masterCb = document.getElementById('select-all');
+          if (masterCb) masterCb.checked = false;
+          updateBatchBar();
+
+          if (filtered.length === 0) {
+              tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400">لا توجد زيارات مطابقة للفلاتر المحددة</td></tr>`;
+              return;
+          }
+
+          tbody.innerHTML = filtered.map(row => {
+              const status = row.status || 'pending';
+              let statusBadge = '';
+              if (status === 'accepted') {
+                  statusBadge = `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">🟢 مقبول</span>`;
+              } else if (status === 'rejected') {
+                  statusBadge = `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">🔴 مرفوض</span>`;
+              } else if (status === 'visited') {
+                  statusBadge = `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">🔵 تمت الزيارة</span>`;
+              } else {
+                  statusBadge = `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">🟡 قيد المراجعة</span>`;
+              }
+
+              let accRepsList = [];
+              try {
+                  accRepsList = JSON.parse(row.accompanying_reps || '[]');
+                  if (!Array.isArray(accRepsList)) accRepsList = [];
+              } catch(e) { accRepsList = []; }
+
+              const accBtnHTML = accRepsList.length > 0
+                  ? `<button onclick='openAccModal(${JSON.stringify(accRepsList)})' class="px-2.5 py-1 bg-brand-teal/40 hover:bg-brand-teal text-emerald-200 border border-brand-teal/60 rounded-lg text-[11px] font-bold transition-all">
+                      👥 ${accRepsList.length} مرافقين
+                    </button>`
+                  : `<span class="text-slate-500 text-[11px]">بدون مرافقين</span>`;
+
+              const clinicBadge = row.in_clinic
+                  ? `<div class="mt-1"><span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-brand-gold text-brand-dark border border-brand-gold animate-pulse">📍 متواجد بالعيادة الآن</span></div>`
+                  : '';
+
+              return `
+                  <tr class="hover:bg-slate-900/50 transition-all border-b border-slate-800/60">
+                      <td class="p-4 text-center">
+                          <input type="checkbox" class="row-checkbox" value="${row.id}" onchange="updateBatchBar()" />
+                      </td>
+                      <td class="p-4">
+                          <div class="font-mono font-bold text-brand-gold tracking-wider">${row.code || '---'}</div>
+                          <button onclick="lookupCodeDirectly('${row.code || row.Name}')" class="mt-1 text-[10px] text-amber-300 hover:text-brand-gold font-bold flex items-center gap-0.5 hover:underline">
+                              📜 السجل
+                          </button>
+                      </td>
+                      <td class="p-4">
+                          <div class="font-bold text-white text-xs">${row.Name || '---'}</div>
+                          <div class="text-[11px] text-brand-teal font-semibold">${row.Rank || '---'}</div>
+                          ${clinicBadge}
+                      </td>
+                      <td class="p-4">
+                          <div class="text-slate-200 font-mono">${row.Phone || '---'}</div>
+                          <div class="text-[10px] text-slate-400">${row.Email || '---'}</div>
+                      </td>
+                      <td class="p-4 font-semibold text-slate-200">${row.Company || '---'}</td>
+                      <td class="p-4">
+                          <div class="font-bold text-brand-gold">${row.Product || '---'}</div>
+                          <div class="text-[10px] text-slate-300">مادة: ${row.active_molecule || '---'} | الجرعة: ${row.dosage || '---'}</div>
+                          <div class="text-[10px] text-emerald-400 font-bold">السعر: ${row.price ? row.price + ' ج.م' : '---'}</div>
+                      </td>
+                      <td class="p-4">
+                          <div class="font-bold text-white">${row.Date || '---'}</div>
+                          <div class="text-[11px] text-slate-400">${formatTime(row.Time)}</div>
+                      </td>
+                      <td class="p-4">${accBtnHTML}</td>
+                      <td class="p-4 text-center">${statusBadge}</td>
+                      <td class="p-4 text-center">
+                          <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                              <button onclick="updateSingleStatus(${row.id}, 'accepted')" title="قبول" class="p-1.5 bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 rounded-lg text-xs font-bold transition-all">
+                                  🟢 قبول
+                              </button>
+                              <button onclick="updateSingleStatus(${row.id}, 'visited')" title="تمت الزيارة" class="p-1.5 bg-sky-600/30 hover:bg-sky-600 text-sky-300 hover:text-white border border-sky-500/40 rounded-lg text-xs font-bold transition-all">
+                                  🔵 تمت الزيارة
+                              </button>
+                              <button onclick="openSingleRejectModal(${row.id})" title="خيارات الرفض" class="p-1.5 bg-rose-600/30 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded-lg text-xs font-bold transition-all">
+                                  🔴 رفض
+                              </button>
+                              <button onclick="hideSingleFromTable(${row.id})" title="إخفاء من الجدول مع الاحتفاظ بالسجل" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition-all">
+                                  👁️‍🗨️ إخفاء
+                              </button>
+                              <button onclick="openEditModal(${row.id})" title="تعديل البيانات" class="p-1.5 bg-brand-gold/20 hover:bg-brand-gold text-brand-gold hover:text-brand-dark border border-brand-gold/40 rounded-lg text-xs font-bold transition-all">
+                                  ✏️ تعديل
+                              </button>
+                          </div>
+                      </td>
+                  </tr>
+              `;
+          }).join('');
+      }
+
+      function openHistoryModal() {
+          document.getElementById('history-modal').classList.remove('hidden');
+      }
+      function closeHistoryModal() {
+          document.getElementById('history-modal').classList.add('hidden');
+      }
+
+      function lookupCodeDirectly(codeOrName) {
+          openHistoryModal();
+          document.getElementById('history-search-input').value = codeOrName;
+          performHistoryLookup();
+      }
+
+      function performHistoryLookup() {
+          const query = document.getElementById('history-search-input').value.trim().toLowerCase();
+          const resultsArea = document.getElementById('history-results-area');
+
+          if (!query) {
+              resultsArea.innerHTML = `<div class="text-center text-slate-400 text-xs py-8">يرجى كتابة كود المندوب أو اسمه للبحث.</div>`;
+              return;
+          }
+
+          const historyList = allBookings.filter(item => {
+              const code = (item.code || '').toLowerCase();
+              const name = (item.Name || '').toLowerCase();
+              const company = (item.Company || '').toLowerCase();
+              return code === query || name.includes(query) || company.includes(query);
+          });
+
+          if (historyList.length === 0) {
+              resultsArea.innerHTML = `
+                  <div class="p-6 text-center text-rose-300 bg-rose-950/40 border border-rose-500/30 rounded-2xl text-xs">
+                      ⚠️ لا توجد أي زيارات مسجلة سابقة لهذا الكود أو الاسم ("${query}")
+                  </div>
+              `;
+              return;
+          }
+
+          historyList.sort((a, b) => b.id - a.id);
+
+          const firstRec = historyList[0];
+          const totalVisits = historyList.length;
+          const acceptedVisits = historyList.filter(v => v.status === 'accepted').length;
+          const visitedCount = historyList.filter(v => v.status === 'visited').length;
+          const rejectedVisits = historyList.filter(v => v.status === 'rejected').length;
+          const pendingVisits = historyList.filter(v => (v.status || 'pending') === 'pending').length;
+
+          const productsList = Array.from(new Set(historyList.map(v => v.Product).filter(Boolean)));
+
+          resultsArea.innerHTML = `
+              <div class="p-4 rounded-2xl bg-slate-900 border border-brand-gold/40 space-y-3">
+                  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-3">
+                      <div>
+                          <h4 class="text-sm font-bold text-white">${firstRec.Name || '---'}</h4>
+                          <div class="text-xs text-brand-teal font-semibold">${firstRec.Rank || '---'} - ${firstRec.Company || '---'}</div>
+                      </div>
+                      <div class="font-mono text-xs font-black text-brand-gold px-3 py-1 bg-slate-950 rounded-xl border border-brand-gold/30">
+                          كود المندوب: ${firstRec.code || '---'}
+                      </div>
+                  </div>
+
+                  <div class="grid grid-cols-5 gap-2 text-center text-xs">
+                      <div class="p-2 bg-slate-950 rounded-xl border border-slate-800">
+                          <span class="text-slate-400 text-[10px] block">إجمالي</span>
+                          <strong class="text-brand-gold text-sm font-black">${totalVisits}</strong>
+                      </div>
+                      <div class="p-2 bg-slate-950 rounded-xl border border-emerald-500/30">
+                          <span class="text-slate-400 text-[10px] block">مقبولة</span>
+                          <strong class="text-emerald-400 text-sm font-black">${acceptedVisits}</strong>
+                      </div>
+                      <div class="p-2 bg-slate-950 rounded-xl border border-sky-500/30">
+                          <span class="text-slate-400 text-[10px] block">تمت</span>
+                          <strong class="text-sky-400 text-sm font-black">${visitedCount}</strong>
+                      </div>
+                      <div class="p-2 bg-slate-950 rounded-xl border border-rose-500/30">
+                          <span class="text-slate-400 text-[10px] block">مرفوضة</span>
+                          <strong class="text-rose-400 text-sm font-black">${rejectedVisits}</strong>
+                      </div>
+                      <div class="p-2 bg-slate-950 rounded-xl border border-amber-500/30">
+                          <span class="text-slate-400 text-[10px] block">انتظار</span>
+                          <strong class="text-amber-400 text-sm font-black">${pendingVisits}</strong>
+                      </div>
+                  </div>
+
+                  <div class="text-[11px] text-slate-300">
+                      💊 <strong>المستحضرات التي قدمها سابقاً:</strong> ${productsList.join('، ') || 'لا يوجد'}
+                  </div>
+              </div>
+
+              <div class="space-y-2">
+                  <h5 class="text-xs font-bold text-brand-gold border-b border-slate-800 pb-1">📅 السجل الزمني لكافة الزيارات:</h5>
+                  <div class="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                      ${historyList.map((item, index) => {
+                          let stBadge = '🟡 قيد المراجعة';
+                          if (item.status === 'accepted') stBadge = '🟢 مقبول';
+                          if (item.status === 'visited') stBadge = '🔵 تمت الزيارة';
+                          if (item.status === 'rejected') stBadge = '🔴 مرفوض';
+
+                          return `
+                    <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+                                <div>
+                                    <div class="font-bold text-white flex items-center gap-2">
+                                        <span>زيارة #${totalVisits - index}</span>
+                                        <span class="text-slate-400 text-[11px]">(${item.Date} -${formatTime(item.Time)})</span>
+                                    </div>
+                                    <div class="text-brand-gold text-[11px] mt-0.5">
+                                        المستحضر: <strong>${item.Product || '---'}</strong> (${item.active_molecule || ''} -${item.dosage || ''})
+                                    </div>
+                                </div>
+                                <div class="text-left font-bold">
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] bg-slate-950 border border-slate-700">
+                                        ${stBadge}
+                                    </span>
+                                </div>
+                            </div>
+                          `;
+                      }).join('')}
+                  </div>
+              </div>
+          `;
+      }
+
+      function openAddModal() {
+          document.getElementById('add-modal').classList.remove('hidden');
+      }
+      function closeAddModal() {
+          document.getElementById('add-modal').classList.add('hidden');
+          document.getElementById('add-date-capacity-info').classList.add('hidden');
+      }
+
+      function generateUniqueCode() {
+          const timePart = Date.now().toString(36).slice(-3).toUpperCase();
+          const randPart = Math.random().toString(36).substring(2, 5).toUpperCase();
+          return `REP-${timePart}${randPart}`;
+      }
+
+      function checkAddDateCapacity(dateStr) {
+          const infoDiv = document.getElementById('add-date-capacity-info');
+          if (!dateStr) {
+              infoDiv.classList.add('hidden');
+              return;
+          }
+
+          const limit = getCapacityForDate(dateStr);
+          const currentCount = allBookings.filter(b => b.Date === dateStr && b.status !== 'rejected').length;
+
+          infoDiv.classList.remove('hidden');
+          if (currentCount >= limit) {
+              infoDiv.className = "p-2.5 rounded-xl bg-amber-950/80 border border-amber-500 text-[11px] text-amber-200 font-bold";
+              infoDiv.innerHTML = `⚠️ هذا اليوم أكتمل حده الافتراضي (${currentCount} / ${limit} زيارات). وسيتم إضافة هذا الحجز كاستثناء بفضل صلاحياتك للطبيب ✨`;
+          } else {
+              infoDiv.className = "p-2.5 rounded-xl bg-slate-900 border border-brand-teal/40 text-[11px] text-emerald-300 font-bold";
+              infoDiv.innerHTML = `✅ المواعيد المحجوزة لهذا اليوم: (${currentCount} / ${limit} زيارات). متاح الحجز بشكل طبيعي.`;
+          }
+      }
+
+      async function handleManualBookingSubmit(e) {
+          e.preventDefault();
+          const btn = document.getElementById('add-submit-btn');
+          btn.disabled = true;
+          btn.textContent = 'جاري الحفظ وتأكيد الحجز...';
+
+          const nameVal = document.getElementById('add-name').value.trim();
+          const companyVal = document.getElementById('add-company').value.trim();
+          const dateVal = document.getElementById('add-date').value;
+          const inClinicVal = document.getElementById('add-in-clinic').checked;
+
+          const limit = getCapacityForDate(dateVal);
+          const currentCount = allBookings.filter(b => b.Date === dateVal && b.status !== 'rejected').length;
+          const isExceeded = currentCount >= limit;
+
+          try {
+              let codeToUse = null;
+              const { data: existingRep } = await db.from('bookings')
+                  .select('code')
+                  .ilike('Name', nameVal)
+                  .ilike('Company', companyVal)
+                  .order('id', { ascending: false })
+                  .limit(1);
+
+              if (existingRep && existingRep.length > 0 && existingRep[0].code) {
+                  codeToUse = existingRep[0].code;
+              } else {
+                  codeToUse = generateUniqueCode();
+              }
+
+              const { error } = await db.from('bookings').insert([{
+                  Name: nameVal,
+                  Rank: document.getElementById('add-rank').value,
+                  Email: document.getElementById('add-email').value.trim(),
+                  Phone: document.getElementById('add-phone').value.trim(),
+                  Company: companyVal,
+                  Product: document.getElementById('add-product').value.trim(),
+                  active_molecule: document.getElementById('add-molecule').value.trim(),
+                  dosage: document.getElementById('add-dosage').value.trim(),
+                  price: parseFloat(document.getElementById('add-price').value) || 0,
+                  Date: dateVal,
+                  Time: document.getElementById('add-time').value,
+                  code: codeToUse,
+                  status: 'accepted',
+                  accompanying_reps: '[]',
+                  hidden_from_table: false,
+                  in_clinic: inClinicVal
+              }]);
+
+              if (error) throw error;
+
+              closeAddModal();
+
+              const toastMessage = isExceeded
+                  ? `تم إضافة الحجز بنجاح كاستثناء (تجاوز الحد: ${currentCount + 1}/${limit}) بالكود: ${codeToUse} ✨`
+                  : `تم إضافة الحجز بنجاح بالكود: ${codeToUse} ✨`;
+
+              showToast(toastMessage);
+              loadBookings();
+          } catch (err) {
+              showToast('خطأ أثناء الحفظ اليدوي: ' + err.message);
+          } finally {
+              btn.disabled = false;
+              btn.textContent = 'حفظ وتأكيد الحجز ✨';
+          }
+      }
+
+      function toggleSelectAll(master) {
+          const checkboxes = document.querySelectorAll('.row-checkbox');
+          checkboxes.forEach(cb => cb.checked = master.checked);
+          updateBatchBar();
+      }
+
+      function updateBatchBar() {
+          const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+          const batchBar = document.getElementById('batch-bar');
+          const countSpan = document.getElementById('selected-count');
+
+          if (checkedBoxes.length > 0) {
+              countSpan.textContent = checkedBoxes.length;
+              batchBar.classList.remove('hidden');
+          } else {
+              batchBar.classList.add('hidden');
+          }
+      }
+
+      async function updateSingleStatus(id, newStatus) {
+          try {
+              const { error } = await db.from('bookings').update({ status: newStatus }).eq('id', id);
+              if (error) throw error;
+
+              let msg = 'تم تحديث حالة الزيارة بنجاح ✨';
+              if (newStatus === 'accepted') msg = 'تم قبول الزيارة بنجاح 🟢';
+              if (newStatus === 'visited') msg = 'تم تسجيل الزيارة كـ "تمت" بنجاح 🔵';
+
+              showToast(msg);
+              loadBookings();
+          } catch (err) {
+              showToast('خطأ أثناء التحديث: ' + err.message);
+          }
+      }
+
+      async function hideSingleFromTable(id) {
+          try {
+              const { error } = await db.from('bookings').update({ hidden_from_table: true }).eq('id', id);
+              if (error) throw error;
+              showToast('تم إخفاء الزيارة من الجدول بنجاح مع الاحتفاظ بسجلها 👁️‍🗨️');
+              loadBookings();
+          } catch (err) {
+              showToast('خطأ أثناء الإخفاء: ' + err.message);
+          }
+      }
+
+      async function batchHideFromTable() {
+          const checkedBoxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => parseInt(cb.value, 10));
+          if (checkedBoxes.length === 0) return;
+
+          try {
+              const { error } = await db.from('bookings').update({ hidden_from_table: true }).in('id', checkedBoxes);
+              if (error) throw error;
+              showToast(`تم إخفاء عدد (${checkedBoxes.length}) زيارة من الجدول بنجاح مع الاحتفاظ بسجلاتها 👁️‍🗨️`);
+              loadBookings();
+          } catch (err) {
+              showToast('خطأ أثناء الإخفاء الجماعي: ' + err.message);
+          }
+      }
+
+      function openSingleRejectModal(id) {
+          targetRejectId = id;
+          isBatchAction = false;
+          document.getElementById('reject-modal').classList.remove('hidden');
+      }
+
+      function openBatchRejectModal() {
+          const checkedBoxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => parseInt(cb.value, 10));
+          if (checkedBoxes.length === 0) {
+              showToast('يرجى تحديد زيارة واحدة على الأقل أولاً');
+              return;
+          }
+          isBatchAction = true;
+          document.getElementById('reject-modal').classList.remove('hidden');
+      }
+
+      function closeRejectModal() {
+          document.getElementById('reject-modal').classList.add('hidden');
+          targetRejectId = null;
+          isBatchAction = false;
+      }
+
+      async function confirmRejectAction(type) {
+          const rejectId = targetRejectId;
+          const batchAction = isBatchAction;
+
+          closeRejectModal();
+
+          if (batchAction) {
+              const checkedBoxes = Array.from(
+                  document.querySelectorAll('.row-checkbox:checked')
+              ).map(cb => parseInt(cb.value, 10));
+
+              if (checkedBoxes.length === 0) return;
+
+              try {
+                  if (type === 'normal') {
+                      const { error } = await db
+                          .from('bookings')
+                          .update({ status: 'rejected' })
+                          .in('id', checkedBoxes);
+
+                      if (error) throw error;
+
+                      showToast(`تم تغيير حالة (${checkedBoxes.length}) زيارة إلى مرفوض 🔴`);
+                  } else {
+                      const { error } = await db
+                          .from('bookings')
+                          .delete()
+                          .in('id', checkedBoxes);
+
+                      if (error) throw error;
+
+                      showToast(`تم حذف (${checkedBoxes.length}) زيارة بشكل نهائي 🗑️`);
+                  }
+
+                  await loadBookings();
+
+              } catch (err) {
+                  showToast('حدث خطأ أثناء التنفيذ الجماعي: ' + err.message);
+              }
+
+          } else if (rejectId) {
+
+              try {
+                  if (type === 'normal') {
+                      const { error } = await db
+                          .from('bookings')
+                          .update({ status: 'rejected' })
+                          .eq('id', rejectId);
+
+                      if (error) throw error;
+
+                      showToast('تم تسجيل الزيارة كمرفوضة 🔴');
+
+                  } else {
+                      const { error } = await db
+                          .from('bookings')
+                          .delete()
+                          .eq('id', rejectId);
+
+                      if (error) throw error;
+
+                      showToast('تم حذف الزيارة والكود بالكامل 🗑️');
+                  }
+
+                  await loadBookings();
+
+              } catch (err) {
+                  showToast('حدث خطأ أثناء التنفيذ: ' + err.message);
+              }
+          }
+      }
+
+      async function batchUpdateStatus(newStatus) {
+          const checkedBoxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => parseInt(cb.value, 10));
+          if (checkedBoxes.length === 0) return;
+
+          try {
+              const { error } = await db.from('bookings').update({ status: newStatus }).in('id', checkedBoxes);
+              if (error) throw error;
+
+              showToast(`تم تحديث حالة عدد (${checkedBoxes.length}) زيارة بنجاح! ✨`);
+              loadBookings();
+          } catch (err) { showToast('خطأ أثناء التحديث الجماعي: ' + err.message); }
+      }
+
+      function openEditModal(id) {
+          const record = allBookings.find(b => b.id === id);
+          if (!record) return;
+
+          document.getElementById('edit-id').value = record.id;
+          document.getElementById('edit-name').value = record.Name || '';
+          document.getElementById('edit-rank').value = record.Rank || '';
+          document.getElementById('edit-email').value = record.Email || '';
+          document.getElementById('edit-phone').value = record.Phone || '';
+          document.getElementById('edit-company').value = record.Company || '';
+          document.getElementById('edit-product').value = record.Product || '';
+          document.getElementById('edit-molecule').value = record.active_molecule || '';
+          document.getElementById('edit-dosage').value = record.dosage || '';
+          document.getElementById('edit-price').value = record.price || '';
+          document.getElementById('edit-date').value = record.Date || '';
+          document.getElementById('edit-time').value = record.Time || '';
+
+          if(document.getElementById('edit-in-clinic')) {
+              document.getElementById('edit-in-clinic').checked = !!record.in_clinic;
+          }
+
+          document.getElementById('edit-modal').classList.remove('hidden');
+      }
+
+      function closeEditModal() {
+          document.getElementById('edit-modal').classList.add('hidden');
+      }
+
+      async function saveEditedBooking(e) {
+          e.preventDefault();
+          const id = parseInt(document.getElementById('edit-id').value, 10);
+
+          const updatedData = {
+              Name: document.getElementById('edit-name').value.trim(),
+              Rank: document.getElementById('edit-rank').value,
+              Email: document.getElementById('edit-email').value.trim(),
+              Phone: document.getElementById('edit-phone').value.trim(),
+              Company: document.getElementById('edit-company').value.trim(),
+              Product: document.getElementById('edit-product').value.trim(),
+              active_molecule: document.getElementById('edit-molecule').value.trim(),
+              dosage: document.getElementById('edit-dosage').value.trim(),
+              price: parseFloat(document.getElementById('edit-price').value) || 0,
+              Date: document.getElementById('edit-date').value,
+              Time: document.getElementById('edit-time').value,
+              in_clinic: document.getElementById('edit-in-clinic') ? document.getElementById('edit-in-clinic').checked : false
+          };
+
+          try {
+              const { error } = await db.from('bookings').update(updatedData).eq('id', id);
+              if (error) throw error;
+
+              closeEditModal();
+              showToast('تم تعديل بيانات الزيارة بنجاح ✨');
+              loadBookings();
+          } catch (err) {
+              showToast('خطأ أثناء حفظ التعديلات: ' + err.message);
+          }
+      }
+
+      function openSettingsModal() {
+          document.getElementById('cap-sat').value = capacitySettings.sat || 12;
+          document.getElementById('cap-sun').value = capacitySettings.sun || 12;
+          document.getElementById('cap-mon').value = capacitySettings.mon || 12;
+          document.getElementById('cap-tue').value = capacitySettings.tue || 12;
+          document.getElementById('cap-wed').value = capacitySettings.wed || 12;
+          document.getElementById('cap-thu').value = capacitySettings.thu || 12;
+          document.getElementById('open-months-limit').value = capacitySettings.openMonthsLimit || 1;
+
+          renderOverridesList();
+          document.getElementById('settings-modal').classList.remove('hidden');
+      }
+
+      function closeSettingsModal() {
+          document.getElementById('settings-modal').classList.add('hidden');
+      }
+
+      function addDateOverride() {
+          const date = document.getElementById('override-date-picker').value;
+          const count = parseInt(document.getElementById('override-count').value, 10);
+
+          if (!date) { showToast('اختر تاريخاً أولاً'); return; }
+          capacitySettings.overrides[date] = count;
+          renderOverridesList();
+          showToast(`تم وضع حد أقصى (${count}) يوم ${date}`);
+      }
+
+      function removeDateOverride(date) {
+          delete capacitySettings.overrides[date];
+          renderOverridesList();
+      }
+
+      function renderOverridesList() {
+          const container = document.getElementById('overrides-list');
+          const entries = Object.entries(capacitySettings.overrides || {});
+
+          if (entries.length === 0) {
+              container.innerHTML = `<p class="text-slate-500 text-[11px]">لا توجد استثناءات تواريخ حالية.</p>`;
+              return;
+          }
+
+          container.innerHTML = entries.map(([dt, cnt]) => `
+              <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-700 text-xs">
+                  <span>📅 <strong>${dt}</strong>: حد أقصى <strong>${cnt}</strong> زيارة</span>
+                  <button onclick="removeDateOverride('${dt}')" class="text-rose-400 font-bold hover:underline">إزالة</button>
+              </div>
+          `).join('');
+      }
+
+      function saveCapacitySettings() {
+          capacitySettings.sat = parseInt(document.getElementById('cap-sat').value, 10) || 12;
+          capacitySettings.sun = parseInt(document.getElementById('cap-sun').value, 10) || 12;
+          capacitySettings.mon = parseInt(document.getElementById('cap-mon').value, 10) || 12;
+          capacitySettings.tue = parseInt(document.getElementById('cap-tue').value, 10) || 12;
+          capacitySettings.wed = parseInt(document.getElementById('cap-wed').value, 10) || 12;
+          capacitySettings.thu = parseInt(document.getElementById('cap-thu').value, 10) || 12;
+          capacitySettings.openMonthsLimit = parseInt(document.getElementById('open-months-limit').value, 10) || 1;
+
+          localStorage.setItem('clinic_capacity_settings', JSON.stringify(capacitySettings));
+          closeSettingsModal();
+          showToast('تم حفظ كافة الإعدادات والشهور المفتوحة بنجاح ✨');
+      }
+
+      function openCalendarModal() {
+          document.getElementById('calendar-modal').classList.remove('hidden');
+      }
+      function closeCalendarModal() {
+          document.getElementById('calendar-modal').classList.add('hidden');
+      }
+
+      openSortFilterModal = function() {
+          document.getElementById('sort-filter-modal').classList.remove('hidden');
+      }
+      function closeSortFilterModal() {
+          document.getElementById('sort-filter-modal').classList.add('hidden');
+      }
+
+      function initFlatpickrs() {
+          flatpickr("#inline-calendar", {
+              inline: true,
+              locale: "ar",
+              dateFormat: "Y-m-d",
+              onChange: function(selectedDates, dateStr) {
+                  selectedSpecificDate = dateStr;
+                  renderTable();
+              }
+          });
+
+          flatpickr("#override-date-picker", { locale: "ar", dateFormat: "Y-m-d", minDate: "today" });
+
+          flatpickr("#add-date", {
+              locale: "ar",
+              dateFormat: "Y-m-d",
+              minDate: "today",
+              onChange: function(selectedDates, dateStr) {
+                  checkAddDateCapacity(dateStr);
+              }
+          });
+
+          flatpickr("#edit-date", { locale: "ar", dateFormat: "Y-m-d" });
+      }
+
+      function openAccModal(list) {
+          const container = document.getElementById('acc-modal-content');
+          if (!list || list.length === 0) {
+              container.innerHTML = `<p class="text-slate-400 text-center">لا يوجد تفاصيل للمرافقين.</p>`;
+          } else {
+              container.innerHTML = list.map((item, idx) => `
+                  <div class="p-3 bg-slate-900/90 rounded-xl border border-slate-700 space-y-1">
+                      <div class="text-brand-gold font-bold">مرافق #${idx + 1}: ${item.name || '---'}</div>
+                      <div class="text-brand-teal text-[11px]">الرتبة: ${item.rank || '---'}</div>
+                      <div class="text-slate-300 text-[11px]">الهاتف: ${item.phone || '---'}</div>
+                      <div class="text-slate-400 text-[10px]">البريد: ${item.email || '---'}</div>
+                  </div>
+              `).join('');
+          }
+          document.getElementById('acc-modal').classList.remove('hidden');
+      }
+
+      function closeAccModal() {
+          document.getElementById('acc-modal').classList.add('hidden');
+      }
+
+      function formatTime(timeStr) {
+          if (!timeStr) return '';
+          const [hour] = timeStr.split(':');
+          const h = parseInt(hour, 10);
+          return h >= 12 ? `${h === 12 ? 12 : h - 12}:00 مساءً` : `${h}:00 صباحاً`;
+      }
+
+      initFlatpickrs();
+      loadBookings();
+    </script>
+  </body>
+</html>
