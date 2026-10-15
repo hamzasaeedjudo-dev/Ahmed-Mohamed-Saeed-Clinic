@@ -44,7 +44,7 @@
 
     <style>
       .settings::-webkit-scrollbar{
-        display:none ;
+        display: none;
       }
       body {
         background: radial-gradient(
@@ -89,6 +89,35 @@
     </style>
   </head>
   <body class="text-slate-100 p-3 sm:p-6 md:p-8 min-h-screen pb-28 md:pb-8">
+    
+    <!-- 🔒 نافذة تسجيل الدخول البسيطة -->
+    <div id="login-overlay" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 z-50">
+      <div class="glass-panel max-w-sm w-full rounded-3xl p-6 border-2 border-brand-gold gold-glow text-center space-y-4">
+        <div class="w-16 h-16 bg-brand-gold/20 text-brand-gold rounded-full flex items-center justify-center text-3xl mx-auto border border-brand-gold/40">
+          🔒
+        </div>
+        <div>
+          <h3 class="font-bold text-white text-lg">بوابة دخول الطبيب</h3>
+          <p class="text-xs text-slate-300 mt-1">أدخل كلمة المرور الخاصة بلوحة التحكم للمتابعة</p>
+        </div>
+        <form onsubmit="handleDashboardLogin(event)" class="space-y-3">
+          <input 
+            type="password" 
+            id="login-pass-input" 
+            required 
+            placeholder="كلمة المرور..." 
+            class="w-full bg-slate-900 border border-brand-teal rounded-xl px-4 py-3 text-center text-white text-sm focus:outline-none focus:border-brand-gold font-bold tracking-widest"
+          />
+          <button 
+            type="submit" 
+            class="w-full py-3 bg-brand-gold hover:bg-brand-goldHover text-brand-dark font-black rounded-xl text-xs shadow-lg transition-all"
+          >
+            دخول للداشبورد ✨
+          </button>
+        </form>
+      </div>
+    </div>
+
     <!-- Toast Notification Banner -->
     <div
       id="toast"
@@ -365,7 +394,7 @@
                 <th class="p-4">المستحضر والمادة والسعر</th>
                 <th class="p-4">تاريخ الموعد</th>
                 <th class="p-4">المرافقون</th>
-                <th class="p-4 text-center" style="width: 128px">الحالة</th>
+                <th class="p-4 text-center" style="width: 128px;">الحالة</th>
                 <th class="p-4 text-center">الإجراءات</th>
               </tr>
             </thead>
@@ -838,18 +867,10 @@
             </div>
           </div>
 
-          <div
-            class="p-3 bg-brand-teal/20 border border-brand-teal/40 rounded-xl"
-          >
+          <div class="p-3 bg-brand-teal/20 border border-brand-teal/40 rounded-xl">
             <label class="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                id="add-in-clinic"
-                class="w-4 h-4 accent-brand-gold rounded"
-              />
-              <span class="text-xs font-bold text-white"
-                >📍 متواجد حالياً في مقر العيادة</span
-              >
+              <input type="checkbox" id="add-in-clinic" class="w-4 h-4 accent-brand-gold rounded" />
+              <span class="text-xs font-bold text-white">📍 متواجد حالياً في مقر العيادة</span>
             </label>
           </div>
 
@@ -883,7 +904,7 @@
       id="settings-modal"
       class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden"
     >
-      <div 
+      <div
         class="settings glass-panel max-w-lg w-full rounded-3xl p-6 border-2 border-brand-gold gold-glow relative max-h-[90vh] overflow-y-auto"
       >
         <div
@@ -897,6 +918,21 @@
             class="text-slate-400 hover:text-white font-bold text-lg"
           >
             &times;
+          </button>
+        </div>
+
+        <!-- 🔑 زر تغيير كلمة المرور عبر المتغير المباشر -->
+        <div class="mb-6 p-4 bg-amber-950/40 border border-amber-500/40 rounded-2xl flex items-center justify-between gap-3">
+          <div>
+            <h4 class="text-xs font-bold text-amber-300 mb-0.5">🔑 حماية لوحة التحكم</h4>
+            <p class="text-[11px] text-slate-300">تغيير كلمة المرور الخاصة بالدخول</p>
+          </div>
+          <button 
+            type="button" 
+            onclick="openChangePasswordModal()" 
+            class="px-3.5 py-2 bg-brand-gold hover:bg-brand-goldHover text-brand-dark font-black rounded-xl text-xs transition-all shadow-md shrink-0"
+          >
+            تغيير الباسورد
           </button>
         </div>
 
@@ -1020,7 +1056,7 @@
             </div>
             <div>
               <label class="block text-slate-400 mb-1"
-                >الحد الأقصى لهذا اليوم:</label
+                >الحد الأقص لهذا اليوم:</label
               >
               <input
                 type="number"
@@ -1061,7 +1097,46 @@
       </div>
     </div>
 
-    <!-- MODAL 6: تعديل البيانات -->
+    <!-- MODAL 6: نافذة تغيير كلمة المرور البسيطة -->
+    <div
+      id="change-password-modal"
+      class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden"
+    >
+      <div
+        class="glass-panel max-w-sm w-full rounded-3xl p-6 border-2 border-brand-gold gold-glow relative space-y-4"
+      >
+        <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+          <h3 class="font-bold text-brand-gold text-sm">🔑 تغيير كلمة مرور الداشبورد</h3>
+          <button onclick="closeChangePasswordModal()" class="text-slate-400 hover:text-white font-bold text-lg">&times;</button>
+        </div>
+
+        <form onsubmit="handlePasswordChangeSubmit(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block text-slate-300 mb-1 font-bold">كلمة المرور الحالية (السابقة) *</label>
+            <input type="password" id="old-pass" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white" />
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1 font-bold">كلمة المرور الجديدة *</label>
+            <input type="password" id="new-pass" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white" />
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1 font-bold">تأكيد كلمة المرور الجديدة *</label>
+            <input type="password" id="confirm-new-pass" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white" />
+          </div>
+
+          <div class="pt-2 flex gap-2">
+            <button type="submit" class="flex-1 py-2.5 bg-brand-gold hover:bg-brand-goldHover text-brand-dark font-black rounded-xl shadow-lg transition-all">
+              تغيير الباسورد ✨
+            </button>
+            <button type="button" onclick="closeChangePasswordModal()" class="px-4 py-2.5 bg-slate-800 text-slate-300 font-bold rounded-xl">
+              إلغاء
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 7: تعديل البيانات -->
     <div
       id="edit-modal"
       class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden"
@@ -1257,18 +1332,10 @@
             </div>
           </div>
 
-          <div
-            class="p-3 bg-brand-teal/20 border border-brand-teal/40 rounded-xl"
-          >
+          <div class="p-3 bg-brand-teal/20 border border-brand-teal/40 rounded-xl">
             <label class="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                id="edit-in-clinic"
-                class="w-4 h-4 accent-brand-gold rounded"
-              />
-              <span class="text-xs font-bold text-white"
-                >📍 متواجد حالياً في مقر العيادة (In Clinic)</span
-              >
+              <input type="checkbox" id="edit-in-clinic" class="w-4 h-4 accent-brand-gold rounded" />
+              <span class="text-xs font-bold text-white">📍 متواجد حالياً في مقر العيادة (In Clinic)</span>
             </label>
           </div>
 
@@ -1291,7 +1358,7 @@
       </div>
     </div>
 
-    <!-- MODAL 7: خيارات الرفض أو الحذف النهائي -->
+    <!-- MODAL 8: خيارات الرفض أو الحذف النهائي -->
     <div
       id="reject-modal"
       class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden"
@@ -1370,6 +1437,77 @@
       const SUPABASE_URL = "https://wbsphroluwgmlcqtqfly.supabase.co";
       const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indic3Bocm9sdXdnbWxjcXRxZmx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5NjQ4MzYsImV4cCI6MjEwNjU0MDgzNn0.yPaxMZYbVUxTGOeIGoCOIp_WZ-flg5PXA73lnVzJBbs";
       const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // 🔐 متغير الباسورد الافتراضي في الكود مباشرة
+      const DEFAULT_PASSWORD = "123456";
+
+      function checkDashboardAuth() {
+        // التحقق من وجود باسورد مخصص تم تغييره وتخزينه محلياً، وإلا فالافتراضي
+        if (!localStorage.getItem("doctor_custom_password")) {
+          localStorage.setItem("doctor_custom_password", DEFAULT_PASSWORD);
+        }
+
+        let isAuthed = sessionStorage.getItem("dashboard_authenticated");
+        if (isAuthed === "true") {
+          document.getElementById("login-overlay").classList.add("hidden");
+        } else {
+          document.getElementById("login-overlay").classList.remove("hidden");
+        }
+      }
+
+      function handleDashboardLogin(e) {
+        e.preventDefault();
+        const enteredPass = document.getElementById("login-pass-input").value.trim();
+        const currentPass = localStorage.getItem("doctor_custom_password") || DEFAULT_PASSWORD;
+
+        if (enteredPass === currentPass) {
+          sessionStorage.setItem("dashboard_authenticated", "true");
+          document.getElementById("login-overlay").classList.add("hidden");
+          showToast("✅ تم تسجيل الدخول بنجاح");
+        } else {
+          showToast("❌ كلمة المرور غير صحيحة");
+          document.getElementById("login-pass-input").value = "";
+        }
+      }
+
+      function openChangePasswordModal() {
+        closeSettingsModal();
+        document.getElementById("change-password-modal").classList.remove("hidden");
+      }
+
+      function closeChangePasswordModal() {
+        document.getElementById("change-password-modal").classList.add("hidden");
+      }
+
+      function handlePasswordChangeSubmit(e) {
+        e.preventDefault();
+        const oldPass = document.getElementById("old-pass").value.trim();
+        const newPass = document.getElementById("new-pass").value.trim();
+        const confirmPass = document.getElementById("confirm-new-pass").value.trim();
+        const currentPass = localStorage.getItem("doctor_custom_password") || DEFAULT_PASSWORD;
+
+        if (oldPass !== currentPass) {
+          showToast("❌ كلمة المرور الحالية غير صحيحة");
+          return;
+        }
+
+        if (newPass !== confirmPass) {
+          showToast("❌ كلمة المرور الجديدة غير متطابقة");
+          return;
+        }
+
+        if (newPass.length < 4) {
+          showToast("⚠️ كلمة المرور يجب ألا تقل عن 4 أرقام أو حروف");
+          return;
+        }
+
+        localStorage.setItem("doctor_custom_password", newPass);
+        closeChangePasswordModal();
+        showToast("✨ تم تغيير كلمة المرور بنجاح!");
+        document.getElementById("old-pass").value = "";
+        document.getElementById("new-pass").value = "";
+        document.getElementById("confirm-new-pass").value = "";
+      }
 
       const RANK_HIERARCHY = {
           "CEO / رئيس مجلس الإدارة": 1,
@@ -1596,7 +1734,7 @@
                     </button>`
                   : `<span class="text-slate-500 text-[11px]">بدون مرافقين</span>`;
 
-              const clinicBadge = row.in_clinic
+              const clinicBadge = row.in_clinic 
                   ? `<div class="mt-1"><span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-brand-gold text-brand-dark border border-brand-gold animate-pulse">📍 متواجد بالعيادة الآن</span></div>`
                   : '';
 
@@ -1824,7 +1962,7 @@
           const inClinicVal = document.getElementById('add-in-clinic').checked;
 
           const limit = getCapacityForDate(dateVal);
-          const currentCount = allBookings.filter(b => b.Date === dateVal && b.status !== 'rejected').length;
+          const currentCount = allBookings.filter(b => b.Date === dateStr && b.status !== 'rejected').length;
           const isExceeded = currentCount >= limit;
 
           try {
@@ -1918,7 +2056,7 @@
           try {
               const { error } = await db.from('bookings').update({ hidden_from_table: true }).eq('id', id);
               if (error) throw error;
-              showToast('تم إخفاء الزيارة من الجدول بنجاح مع الاحتفاظ بسجلها 👁️‍🗨️');
+              showToast('تم إخفاء الزيارة من الجدول بنجاح مع الاحتفاظ بالسجل 👁️‍🗨️');
               loadBookings();
           } catch (err) {
               showToast('خطأ أثناء الإخفاء: ' + err.message);
@@ -2062,7 +2200,7 @@
           document.getElementById('edit-price').value = record.price || '';
           document.getElementById('edit-date').value = record.Date || '';
           document.getElementById('edit-time').value = record.Time || '';
-
+          
           if(document.getElementById('edit-in-clinic')) {
               document.getElementById('edit-in-clinic').checked = !!record.in_clinic;
           }
@@ -2235,6 +2373,8 @@
           return h >= 12 ? `${h === 12 ? 12 : h - 12}:00 مساءً` : `${h}:00 صباحاً`;
       }
 
+      // تشغيل التحقق أول ما الصفحة تفتح
+      checkDashboardAuth();
       initFlatpickrs();
       loadBookings();
     </script>
