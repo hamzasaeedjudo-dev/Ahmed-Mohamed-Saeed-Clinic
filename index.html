@@ -737,7 +737,11 @@
       let currentStep = 1;
       let accCount = 0;
       let activeRecord = null;
-      let fetchedPastVisits = []; // تخزين كل الزيارات المرتبطة بالكود
+      let fetchedPastVisits = []; 
+
+      // متغيرات سعة العيادة وجدول الحجوزات للتحقق من الأيام المكتملة
+      let clinicSettings = { sat: 12, sun: 12, mon: 12, tue: 12, wed: 12, thu: 12, overrides: {} };
+      let allBookingsCounts = {};
 
       function showToast(message) {
         const toast = document.getElementById("toast");
@@ -787,12 +791,6 @@
             }
           } else if (currentStep === 2) {
             const product = document.getElementById("product").value.trim();
-            const molecule = document
-              .getElementById("active_molecule")
-              .value.trim();
-            const dosage = document.getElementById("dosage").value.trim();
-            const price = document.getElementById("price").value;
-
             if (!product) {
               showToast("⚠️ Please enter all the required data");
               return;
@@ -876,8 +874,7 @@
         const d = document.getElementById("date").value;
         const t = document.getElementById("time").value;
         if (d && t) {
-          document.getElementById("preview-datetime").textContent =
-            `${d} - ${formatTime(t)}`;
+          document.getElementById("preview-datetime").textContent = `${d} | ${formatTime(t)}`;
         } else if (d) {
           document.getElementById("preview-datetime").textContent = d;
         } else {
@@ -907,17 +904,13 @@
 
         document.getElementById("preview-code").textContent = record.code;
 
-        // حالة وصول العيادة
         const arrivalBox = document.getElementById("arrival-box");
         const arrivalBtn = document.getElementById("arrival-btn");
-        const arrivalStatusText = document.getElementById(
-          "arrival-status-text",
-        );
+        const arrivalStatusText = document.getElementById("arrival-status-text");
 
         arrivalBox.classList.remove("hidden");
         if (record.in_clinic) {
-          arrivalStatusText.textContent =
-            "📍 أنت مسجل حالياً متواجد في العيادة";
+          arrivalStatusText.textContent = "📍 أنت مسجل حالياً متواجد في العيادة";
           arrivalBtn.textContent = "إلغاء تسجيل الوصول (غادرت العيادة)";
           arrivalBtn.className =
             "w-full bg-rose-500 hover:bg-rose-400 text-white font-black py-2 rounded-lg text-xs transition-all shadow-lg";
@@ -928,7 +921,6 @@
             "w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-2 rounded-lg text-xs transition-all shadow-lg";
         }
 
-        // شارة الحالة
         const badge = document.getElementById("ticket-status-badge");
         const st = record.status || "pending";
         if (st === "accepted") {
@@ -985,7 +977,6 @@
           if (data && data.length > 0) {
             fetchedPastVisits = data;
 
-            // تعبئة قائمة الزيارات في سلة "زياراتك"
             const historyBox = document.getElementById("history-dropdown-box");
             const selectEl = document.getElementById("my-visits-select");
             const countBadge = document.getElementById("history-count-badge");
@@ -1001,11 +992,10 @@
                   if (v.status === "accepted") stTxt = "مقبول";
                   else if (v.status === "rejected") stTxt = "مرفوض";
                   else if (v.status === "visited") stTxt = "تمت الزيارة";
-                  return `<option value="${v.id}">زيارة #${data.length - idx} (${v.Date} - ${v.Product || "منتج"} | ${stTxt})</option>`;
+                  return `<option value="${v.id}">زيارة #${data.length - idx} (${v.Date} | ${v.Product || "منتج"} | ${stTxt})</option>`;
                 })
                 .join("");
 
-            // عرض أحدث زيارة افتراضياً في البطاقة
             fillFormWithRecord(data[0]);
             showToast("تم استرجاع سجلك وزياراتك بنجاح!");
           } else {
@@ -1233,7 +1223,7 @@
           document.getElementById("modal-code").textContent = codeToUse;
           document.getElementById("success-modal").classList.remove("hidden");
         } catch (err) {
-          showToast("حدث خطأ أثناء الحفظ: " + err.message);
+          showToast("خطأ أثناء الحفظ: " + err.message);
         } finally {
           submitBtn.disabled = false;
           submitBtn.textContent = "تأكيد وإرسال طلب الزيارة ✨";
@@ -1245,30 +1235,77 @@
         location.reload();
       }
 
+      // دالة مساعدة لحساب الحد الأقصى لأي تاريخ بناءً على إعدادات الداشبورد واستثناءاتها
+      function getCapacityForDate(dateStr) {
+        if (!dateStr) return 12;
+        if (clinicSettings.overrides && clinicSettings.overrides[dateStr] !== undefined) {
+          return parseInt(clinicSettings.overrides[dateStr], 10);
+        }
+        const dateObj = new Date(dateStr);
+        const dayNum = dateObj.getDay(); // 0: الأحد, 1: الاثنين ... 6: السبت
+        const dayMap = { 6: 'sat', 0: 'sun', 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu', 5: 'fri' };
+        const dayKey = dayMap[dayNum];
+        if (dayKey === 'fri') return 0; // افتراض الجمعة مغلق إذا لم يُذكر
+        return (dayKey && clinicSettings[dayKey] !== undefined) ? parseInt(clinicSettings[dayKey], 10) : 12;
+      }
+
+      // تهيئة التقويم مع ربطه بإعدادات الداشبورد وقفل الأيام ممتلئة أو التي سعتها 0
       async function initCalendar() {
         try {
-          const now = new Date();
-          const lastDayOfMonth = new Date(
-            now.getFullYear(),
-            now.getMonth() + 1,
-            0,
-          );
+          // جلب إعدادات العيادة وسعة الأيام من قاعدة البيانات (عبر كود CLINIC-SETTINGS)
+          const { data: settingsData } = await db.from('bookings').select('Product').eq('code', 'CLINIC-SETTINGS').single();
+          if (settingsData && settingsData.Product) {
+            clinicSettings = JSON.parse(settingsData.Product);
+          }
 
-          flatpickr("#date", {
-            locale: "ar",
-            dateFormat: "Y-m-d",
-            minDate: "today",
-            maxDate: lastDayOfMonth,
-            disable: [
-              function (date) {
-                const day = date.getDay();
-                return !(day === 0 || day === 2 || day === 6);
-              },
-            ],
-          });
+          // جلب الحجوزات الحالية لحساب العدد الحالي بكل يوم وقفل الأيام المكتملة
+          const { data: bookingsData } = await db.from('bookings').select('Date, status').not('code', 'in', '(ADMIN-PASS,CLINIC-SETTINGS)');
+          if (bookingsData) {
+            allBookingsCounts = {};
+            bookingsData.forEach(b => {
+              if (b.Date && b.status !== 'rejected') {
+                allBookingsCounts[b.Date] = (allBookingsCounts[b.Date] || 0) + 1;
+              }
+            });
+          }
         } catch (e) {
-          console.error(e);
+          console.log("استخدام السعة الافتراضية");
         }
+
+        const now = new Date();
+        const limitMonths = parseInt(clinicSettings.openMonthsLimit, 10) || 1;
+        const lastDayOfMonth = new Date(
+          now.getFullYear(),
+          now.getMonth() + limitMonths,
+          0,
+        );
+
+        flatpickr("#date", {
+          locale: "ar",
+          dateFormat: "Y-m-d",
+          minDate: "today",
+          maxDate: lastDayOfMonth,
+          disable: [
+            function (date) {
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const dayStr = String(date.getDate()).padStart(2, '0');
+              const dateStr = `${year}-${month}-${dayStr}`;
+
+              // 1. التحقق إذا كان الحد الأقصى لهذا اليوم في الداشبورد = 0
+              const maxLimit = getCapacityForDate(dateStr);
+              if (maxLimit === 0) return true;
+
+              // 2. التحقق إذا بلغ عدد الحجوزات في هذا اليوم الحد الأقصى (ممتلئ)
+              const currentBookedCount = allBookingsCounts[dateStr] || 0;
+              if (currentBookedCount >= maxLimit) {
+                return true; // يتحول للرمادي ويصبح غير قابل للنقر
+              }
+
+              return false;
+            },
+          ],
+        });
       }
 
       function formatTime(timeStr) {
