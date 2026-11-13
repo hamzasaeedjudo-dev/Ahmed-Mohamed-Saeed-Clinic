@@ -212,7 +212,7 @@
             <div
               class="flex justify-between items-center py-2 border-b border-slate-800/80"
             >
-              <span class="text-slate-400">تاريخ وساعة الموعد:</span>
+              <span class="text-slate-400">تاريخ الموعد:</span>
               <span id="preview-datetime" class="font-bold text-emerald-400"
                 >لم يحدد بعد</span
               >
@@ -238,9 +238,18 @@
             >
               📍 تسجيل وصولي للعيادة الآن
             </button>
+            <!-- زر اعتذار وإلغاء الزيارة للمندوب (يحذفها نهائياً) -->
+            <button
+              type="button"
+              id="cancel-visit-btn"
+              onclick="cancelMyVisit()"
+              class="w-full bg-rose-600/80 hover:bg-rose-600 text-white font-bold py-1.5 rounded-lg text-xs transition-all border border-rose-500/40"
+            >
+              ❌ إلغاء وحذف الزيارة نهائياً
+            </button>
           </div>
 
-          <!-- قسم زياراتك / سجلك (قبل المرافقين) -->
+          <!-- قسم زياراتك / سجلك -->
           <div
             id="history-dropdown-box"
             class="hidden mt-3 p-3 rounded-xl bg-slate-900/90 border border-brand-teal/50 space-y-2"
@@ -364,8 +373,8 @@
                     3
                   </div>
                   <span class="text-xs font-semibold text-slate-400"
-                    >موعد الزيارة
-                  </span>
+                    >تاريخ الزيارة</span
+                  >
                 </div>
               </div>
 
@@ -500,7 +509,7 @@
 
                   <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1"
-                      >اسم المنتج / المستحضر *</label
+                      >اسم المنتج / المستحضر الأساسي *</label
                     >
                     <input
                       type="text"
@@ -514,8 +523,8 @@
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
                       <label class="block text-xs font-bold text-slate-300 mb-1"
-                        >المادة الفعالة </label
-                      >
+                        >المادة الفعالة
+                      </label>
                       <input
                         type="text"
                         id="active_molecule"
@@ -536,8 +545,8 @@
                     </div>
                     <div>
                       <label class="block text-xs font-bold text-slate-300 mb-1"
-                        >السعر في السوق (ج.م) </label
-                      >
+                        >السعر في السوق (ج.م)
+                      </label>
                       <input
                         type="number"
                         step="0.01"
@@ -547,6 +556,19 @@
                         class="form-input w-full px-3 py-3 rounded-xl text-sm"
                       />
                     </div>
+                  </div>
+
+                  <!-- 💊 قسم إضافة منتج آخر (اختياري) -->
+                  <div class="pt-2">
+                    <div id="second-product-container"></div>
+                    <button
+                      type="button"
+                      id="add-second-product-btn"
+                      onclick="addSecondProductField()"
+                      class="w-full py-2.5 border border-dashed border-brand-teal/60 text-brand-teal hover:bg-brand-teal/10 rounded-xl text-xs font-bold transition-all"
+                    >
+                      + إضافة منتج آخر (اختياري)
+                    </button>
                   </div>
 
                   <div>
@@ -576,7 +598,7 @@
                       onclick="goToStep(3)"
                       class="bg-brand-gold hover:bg-brand-goldHover text-brand-dark font-bold px-6 py-3 rounded-xl text-sm transition-all flex items-center gap-2"
                     >
-                      التالي: اختيار الموعد &larr;
+                      التالي: اختيار التاريخ &larr;
                     </button>
                   </div>
                 </div>
@@ -586,43 +608,24 @@
                   <h4
                     class="text-base font-bold text-brand-gold border-b border-slate-800 pb-2"
                   >
-                    الخطوة 3: تحديد موعد الزيارة والتأكيد
+                    الخطوة 3: تحديد تاريخ الزيارة والتأكيد (التاريخ فقط)
                   </h4>
 
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label class="block text-xs font-bold text-slate-300 mb-1"
-                        >تاريخ الزيارة *</label
-                      >
-                      <input
-                        type="text"
-                        id="date"
-                        readonly
-                        placeholder="اختر من التقويم..."
-                        class="form-input w-full px-4 py-3 rounded-xl text-sm cursor-pointer"
-                        onchange="updateLiveTicket()"
-                      />
-                    </div>
-                    <div>
-                      <label class="block text-xs font-bold text-slate-300 mb-1"
-                        >وقت الزيارة *</label
-                      >
-                      <select
-                        id="time"
-                        class="form-input w-full px-4 py-3 rounded-xl text-sm"
-                        onchange="updateLiveTicket()"
-                      >
-                        <option value="">اختر الوقت</option>
-                        <option value="16:00">04:00 مساءً</option>
-                        <option value="17:00">05:00 مساءً</option>
-                        <option value="18:00">06:00 مساءً</option>
-                        <option value="19:00">07:00 مساءً</option>
-                        <option value="20:00">08:00 مساءً</option>
-                      </select>
-                    </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1"
+                      >تاريخ الزيارة (التاريخ فقط) *</label
+                    >
+                    <input
+                      type="text"
+                      id="date"
+                      readonly
+                      placeholder="اختر التاريخ من التقويم..."
+                      class="form-input w-full px-4 py-3 rounded-xl text-sm cursor-pointer"
+                      onchange="updateLiveTicket()"
+                    />
                   </div>
 
-                  <!-- خيار التواجد (اختياري أثناء الحجز من البيت أو العيادة) -->
+                  <!-- خيار التواجد (اختياري) -->
                   <div
                     class="p-4 rounded-xl bg-brand-teal/20 border border-brand-teal/40 space-y-2"
                   >
@@ -637,18 +640,13 @@
                         بالاستراحة)؟</span
                       >
                     </label>
-                    <p class="text-[11px] text-slate-300 mr-8">
-                      إذا كنت تحجز من خارج العيادة، اترك الخيار فارغاً. وإذا وصلت
-                      العيادة بالفعل، قم بتحديده لتعلم الطبيب بوجودك .
-                    </p>
                   </div>
 
                   <div
                     class="p-4 rounded-xl bg-emerald-950/50 border border-emerald-500/30 text-xs text-emerald-200 leading-relaxed"
                   >
-                    📌 <strong>تنبيه:</strong> بعد إرسال الطلب، ستحصل على كود
-                    خاص يمكنك استخدامه لمتابعة حالة القبول أو الرفض أو تسجيل
-                    وصولك في أي وقت من الواجهة الرئيسية.
+                    📌 <strong>تنبيه:</strong> بعد إرسال الطلب، ستحصل على كود خاص
+                    يمكنك استخدامه لمتابعة حالة القبول أو إلغاء الزيارة في أي وقت.
                   </div>
 
                   <div class="pt-6 flex justify-between">
@@ -675,7 +673,7 @@
       </div>
     </div>
 
-    <!-- Modal الكود المنبثق -->
+    <!-- Modal النجاح والكود -->
     <div
       id="success-modal"
       class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden"
@@ -685,37 +683,36 @@
       >
         <div class="glass-form-watermark"></div>
 
-        <div class="relative z-10">
+        <div class="relative z-10 space-y-3">
           <div
-            class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 border border-emerald-500/30"
+            class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-3xl mx-auto border border-emerald-500/30"
           >
             ✓
           </div>
-          <h3 class="text-xl font-bold text-white mb-2">
+          <h3 class="text-xl font-bold text-white">
             تم تسجيل طلب الزيارة بنجاح! ✨
           </h3>
-          <p class="text-xs text-slate-300 mb-3">
-            يرجى حفظ هذا الكود لاستخدامه لاحقاً:
+          <p class="text-xs text-slate-300">
+            الكود الخاص بك للاستعلام أو الإلغاء لاحقاً:
           </p>
 
           <div
-            id="modal-code"
-            class="text-2xl font-black tracking-widest text-brand-gold bg-brand-dark/90 py-3 px-6 rounded-2xl border border-brand-gold/40 mb-4"
+            class="p-3 bg-brand-dark/90 rounded-2xl border border-brand-gold/40 flex items-center justify-between"
           >
-            REP-XXXXXX
+            <div
+              id="modal-code"
+              class="text-xl font-black tracking-widest text-brand-gold px-2"
+            >
+              REP-XXXXXX
+            </div>
+            <button
+              type="button"
+              onclick="copyCodeFromModal()"
+              class="px-3 py-2 bg-brand-gold hover:bg-brand-goldHover text-brand-dark font-bold rounded-xl text-xs shadow-md transition-all"
+            >
+              📋 نسخ الكود
+            </button>
           </div>
-
-          <div
-            class="p-3 rounded-xl bg-brand-teal/20 border border-brand-teal/30 text-xs text-slate-200 leading-relaxed mb-4 text-right"
-          >
-            💡 <strong>ملاحظة هامة:</strong> يُرجى التحقق من حالة الزيارة
-            (مقبولة / مرفوضة) قبل الحضور، وذلك بإدخال الكود في مربع الاسترجاع
-            بالصفحة الرئيسية لعرض الحالة على البطاقة التفاعلية.
-          </div>
-
-          <p class="text-xs text-amber-400 font-semibold mb-6">
-            📸 يُفضل أخذ لقطة شاشة (Screenshot) للكود.
-          </p>
 
           <button
             type="button"
@@ -737,10 +734,18 @@
       let currentStep = 1;
       let accCount = 0;
       let activeRecord = null;
-      let fetchedPastVisits = []; 
+      let fetchedPastVisits = [];
+      let activeGeneratedCode = "";
 
-      // متغيرات سعة العيادة وجدول الحجوزات للتحقق من الأيام المكتملة
-      let clinicSettings = { sat: 12, sun: 12, mon: 12, tue: 12, wed: 12, thu: 12, overrides: {} };
+      let clinicSettings = {
+        sat: 12,
+        sun: 12,
+        mon: 12,
+        tue: 12,
+        wed: 12,
+        thu: 12,
+        overrides: {},
+      };
       let allBookingsCounts = {};
 
       function showToast(message) {
@@ -754,6 +759,7 @@
 
       function isValidPhone(phone) {
         const cleanPhone = phone.trim();
+        if (!cleanPhone) return true;
         const isOnlyDigits = /^\d+$/.test(cleanPhone);
         return (
           isOnlyDigits && cleanPhone.length >= 11 && cleanPhone.startsWith("01")
@@ -762,6 +768,7 @@
 
       function isValidEmail(email) {
         const cleanEmail = email.trim();
+        if (!cleanEmail) return true;
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(cleanEmail);
       }
@@ -776,58 +783,19 @@
             const company = document.getElementById("company").value.trim();
 
             if (!name || !rank || !email || !phone || !company) {
-              showToast("⚠️ Please enter all the required data");
-              return;
-            }
-
-            if (!isValidPhone(phone)) {
-              showToast("⚠️ Please enter a valid number");
-              return;
-            }
-
-            if (!isValidEmail(email)) {
-              showToast("⚠️ Please enter a valid email");
+              showToast("⚠️ يرجى ملء كافة البيانات الأساسية المطلوبة");
               return;
             }
           } else if (currentStep === 2) {
             const product = document.getElementById("product").value.trim();
             if (!product) {
-              showToast("⚠️ Please enter all the required data");
+              showToast("⚠️ يرجى إدخال اسم المستحضر الأساسي");
               return;
             }
-
-            let accError = false;
-            let accRows = document.querySelectorAll("#acc-container > div");
-            for (let row of accRows) {
-              const p = row.querySelector(".acc-phone").value.trim();
-              const em = row.querySelector(".acc-email").value.trim();
-              const n = row.querySelector(".acc-name").value.trim();
-              const r = row.querySelector(".acc-rank").value;
-
-              if (!n || !p || !em || !r) {
-                showToast("⚠️ Please enter all the required data");
-                return;
-              }
-
-              if (!isValidPhone(p)) {
-                showToast("⚠️ Please enter a valid number");
-                accError = true;
-                break;
-              }
-
-              if (!isValidEmail(em)) {
-                showToast("⚠️ Please enter a valid email");
-                accError = true;
-                break;
-              }
-            }
-
-            if (accError) return;
           }
         }
 
         currentStep = step;
-
         document
           .getElementById("step-1-content")
           .classList.toggle("hidden", step !== 1);
@@ -872,15 +840,7 @@
           document.getElementById("product").value || "---";
 
         const d = document.getElementById("date").value;
-        const t = document.getElementById("time").value;
-        if (d && t) {
-          document.getElementById("preview-datetime").textContent = `${d} | ${formatTime(t)}`;
-        } else if (d) {
-          document.getElementById("preview-datetime").textContent = d;
-        } else {
-          document.getElementById("preview-datetime").textContent =
-            "لم يحدد بعد";
-        }
+        document.getElementById("preview-datetime").textContent = d || "لم يحدد بعد";
       }
 
       function fillFormWithRecord(record) {
@@ -896,7 +856,6 @@
         document.getElementById("dosage").value = record.dosage || "";
         document.getElementById("price").value = record.price || "";
         document.getElementById("date").value = record.Date || "";
-        document.getElementById("time").value = record.Time || "";
 
         if (document.getElementById("in_clinic")) {
           document.getElementById("in_clinic").checked = !!record.in_clinic;
@@ -906,11 +865,14 @@
 
         const arrivalBox = document.getElementById("arrival-box");
         const arrivalBtn = document.getElementById("arrival-btn");
-        const arrivalStatusText = document.getElementById("arrival-status-text");
+        const arrivalStatusText = document.getElementById(
+          "arrival-status-text",
+        );
 
         arrivalBox.classList.remove("hidden");
         if (record.in_clinic) {
-          arrivalStatusText.textContent = "📍 أنت مسجل حالياً متواجد في العيادة";
+          arrivalStatusText.textContent =
+            "📍 أنت مسجل حالياً متواجد في العيادة";
           arrivalBtn.textContent = "إلغاء تسجيل الوصول (غادرت العيادة)";
           arrivalBtn.className =
             "w-full bg-rose-500 hover:bg-rose-400 text-white font-black py-2 rounded-lg text-xs transition-all shadow-lg";
@@ -1010,6 +972,36 @@
         }
       }
 
+      // ❌ إلغاء وحذف الزيارة نهائياً من قاعدة البيانات لتختفي من الداشبورد تماماً
+      async function cancelMyVisit() {
+        if (!activeRecord || !activeRecord.id) {
+          showToast("⚠️ يرجى استرجاع الكود أولاً");
+          return;
+        }
+        if (!confirm("هل أنت متأكد من إلغاء وحذف هذه الزيارة نهائياً؟"))
+          return;
+
+        try {
+          const { error } = await db
+            .from("bookings")
+            .delete()
+            .eq("id", activeRecord.id);
+
+          if (error) throw error;
+
+          showToast("❌ تم إلغاء وحذف الزيارة نهائياً بنجاح.");
+          
+          // تفريغ الشاشة وتحديث الحقول
+          document.getElementById("lookup-code").value = "";
+          document.getElementById("arrival-box").classList.add("hidden");
+          document.getElementById("history-dropdown-box").classList.add("hidden");
+          document.getElementById("wizard-form").reset();
+          updateLiveTicket();
+        } catch (err) {
+          showToast("خطأ أثناء الحذف: " + err.message);
+        }
+      }
+
       async function toggleMyClinicArrival() {
         if (!activeRecord || !activeRecord.code) {
           showToast("⚠️ يرجى استرجاع الكود أولاً");
@@ -1035,6 +1027,35 @@
         }
       }
 
+      function addSecondProductField() {
+        const container = document.getElementById("second-product-container");
+        const btn = document.getElementById("add-second-product-btn");
+        if (container.children.length > 0) return;
+
+        container.innerHTML = `
+          <div class="p-3 rounded-xl bg-slate-900/90 border border-brand-teal/50 space-y-2 text-xs relative mb-2" id="second-prod-box">
+            <div class="flex justify-between items-center text-brand-gold font-bold">
+              <span>💊 منتج آخر (اختياري)</span>
+              <button type="button" onclick="removeSecondProductField()" class="text-rose-400 hover:text-rose-300">إزالة</button>
+            </div>
+            <input type="text" id="sec_product" class="form-input w-full px-3 py-2 rounded-lg text-xs" placeholder="اسم المنتج الآخر..." />
+            <div class="grid grid-cols-3 gap-2">
+              <input type="text" id="sec_molecule" class="form-input px-2 py-2 rounded-lg text-xs" placeholder="المادة الفعالة" />
+              <input type="text" id="sec_dosage" class="form-input px-2 py-2 rounded-lg text-xs" placeholder="الجرعة" />
+              <input type="number" step="0.01" id="sec_price" class="form-input px-2 py-2 rounded-lg text-xs" placeholder="السعر" />
+            </div>
+          </div>
+        `;
+        btn.classList.add("hidden");
+      }
+
+      function removeSecondProductField() {
+        document.getElementById("second-product-container").innerHTML = "";
+        document
+          .getElementById("add-second-product-btn")
+          .classList.remove("hidden");
+      }
+
       function addAccField() {
         accCount++;
         document.getElementById("preview-acc-count").textContent =
@@ -1046,16 +1067,16 @@
         div.id = `acc-row-${accCount}`;
         div.innerHTML = `
                 <div class="flex justify-between items-center text-brand-gold font-bold">
-                    <span>مرافق #${accCount}</span>
+                    <span>مرافق #${accCount} (الهاتف والبريد اختياري)</span>
                     <button type="button" onclick="removeAcc(${accCount})" class="text-rose-400 hover:text-rose-300">إزالة</button>
                 </div>
-                <input type="text" class="acc-name form-input w-full px-2 py-1.5 rounded-lg" placeholder="اسم المرافق بالكامل" />
+                <input type="text" class="acc-name form-input w-full px-2 py-1.5 rounded-lg" placeholder="اسم المرافق بالكامل *" />
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="tel" class="acc-phone form-input px-2 py-1.5 rounded-lg" placeholder="010XXXXXXXX" />
-                    <input type="email" class="acc-email form-input px-2 py-1.5 rounded-lg" placeholder="name@company.com" />
+                    <input type="tel" class="acc-phone form-input px-2 py-1.5 rounded-lg" placeholder="010XXXXXXXX (اختياري)" />
+                    <input type="email" class="acc-email form-input px-2 py-1.5 rounded-lg" placeholder="name@company.com (اختياري)" />
                 </div>
                 <select class="acc-rank form-input w-full px-2 py-1.5 rounded-lg text-xs">
-                    <option value="">اختر المسمى الوظيفي للمرافق</option>
+                    <option value="">اختر المسمى الوظيفي للمرافق *</option>
                     <option value="CEO / رئيس مجلس الإدارة">CEO / رئيس مجلس الإدارة</option>
                     <option value="Country Manager / مدير الشركة">Country Manager / مدير الشركة</option>
                     <option value="Business Unit Manager / مدير قطاع">Business Unit Manager / مدير قطاع</option>
@@ -1096,26 +1117,15 @@
         const emailVal = document.getElementById("email").value.trim();
         const phoneVal = document.getElementById("phone").value.trim();
         const companyVal = document.getElementById("company").value.trim();
+        const dateVal = document.getElementById("date").value;
 
         if (!nameVal || !rankVal || !emailVal || !phoneVal || !companyVal) {
           goToStep(1);
-          showToast("⚠️ Please enter all the required data");
+          showToast("⚠️ يرجى ملء كافة البيانات الأساسية");
           return;
         }
 
-        if (!isValidPhone(phoneVal)) {
-          goToStep(1);
-          showToast("⚠️ Please enter a valid number");
-          return;
-        }
-
-        if (!isValidEmail(emailVal)) {
-          goToStep(1);
-          showToast("⚠️ Please enter a valid email");
-          return;
-        }
-
-        const productVal = document.getElementById("product").value.trim();
+        let productVal = document.getElementById("product").value.trim();
         const moleculeVal = document
           .getElementById("active_molecule")
           .value.trim();
@@ -1125,57 +1135,40 @@
 
         if (!productVal) {
           goToStep(2);
-          showToast("⚠️ Please enter all the required data");
+          showToast("⚠️ يرجى إدخال اسم المستحضر الأساسي");
           return;
         }
 
-        const accReps = [];
-        let accIncomplete = false;
-        let accPhoneError = false;
-        let accEmailError = false;
+        const secProdInput = document.getElementById("sec_product");
+        let extraProdsList = [];
+        if (secProdInput && secProdInput.value.trim()) {
+          const secName = secProdInput.value.trim();
+          const secMol = document.getElementById("sec_molecule").value.trim();
+          const secDos = document.getElementById("sec_dosage").value.trim();
+          const secPrice = parseFloat(document.getElementById("sec_price").value) || 0;
+          extraProdsList.push({ name: secName, molecule: secMol, dosage: secDos, price: secPrice });
+        }
 
+        const accReps = [];
         document.querySelectorAll("#acc-container > div").forEach((row) => {
           const n = row.querySelector(".acc-name").value.trim();
           const p = row.querySelector(".acc-phone").value.trim();
           const em = row.querySelector(".acc-email").value.trim();
           const r = row.querySelector(".acc-rank").value;
-
-          if (!n || !p || !em || !r) accIncomplete = true;
-          if (!isValidPhone(p)) accPhoneError = true;
-          if (!isValidEmail(em)) accEmailError = true;
-
-          accReps.push({ name: n, phone: p, email: em, rank: r });
+          if (n && r) {
+            accReps.push({ name: n, phone: p, email: em, rank: r });
+          }
         });
 
-        if (accIncomplete) {
-          goToStep(2);
-          showToast("⚠️ Please enter all the required data");
+        if (!dateVal) {
+          goToStep(3);
+          showToast("⚠️ يرجى اختيار تاريخ الزيارة");
           return;
         }
 
-        if (accPhoneError) {
-          goToStep(2);
-          showToast("⚠️ Please enter a valid number");
-          return;
-        }
-
-        if (accEmailError) {
-          goToStep(2);
-          showToast("⚠️ Please enter a valid email");
-          return;
-        }
-
-        const dateVal = document.getElementById("date").value;
-        const timeVal = document.getElementById("time").value;
         const inClinicVal = document.getElementById("in_clinic")
           ? document.getElementById("in_clinic").checked
           : false;
-
-        if (!dateVal || !timeVal) {
-          goToStep(3);
-          showToast("⚠️ Please enter all the required data");
-          return;
-        }
 
         const submitBtn = document.getElementById("submit-btn");
         submitBtn.disabled = true;
@@ -1186,7 +1179,7 @@
 
           const { data: existingRep } = await db
             .from("bookings")
-            .select("code")
+            .select("code, Date")
             .ilike("Name", nameVal)
             .ilike("Company", companyVal)
             .order("id", { ascending: false })
@@ -1194,6 +1187,23 @@
 
           if (existingRep && existingRep.length > 0 && existingRep[0].code) {
             codeToUse = existingRep[0].code;
+
+            // منع تكرار الزيارة في نفس اليوم لنفس الكود
+            const { data: sameDayCheck } = await db
+              .from("bookings")
+              .select("id")
+              .eq("code", codeToUse)
+              .eq("Date", dateVal)
+              .limit(1);
+
+            if (sameDayCheck && sameDayCheck.length > 0) {
+              showToast(
+                "⚠️ عذراً، لديك بالفعل زيارة مسجلة بهذا الكود في نفس هذا التاريخ!",
+              );
+              submitBtn.disabled = false;
+              submitBtn.textContent = "تأكيد وإرسال طلب الزيارة ✨";
+              return;
+            }
           } else {
             codeToUse = generateUniqueCode();
           }
@@ -1209,8 +1219,9 @@
               active_molecule: moleculeVal,
               dosage: dosageVal,
               price: priceVal,
+              extra_products: JSON.stringify(extraProdsList),
               Date: dateVal,
-              Time: timeVal,
+              Time: "16:00",
               code: codeToUse,
               status: "pending",
               accompanying_reps: JSON.stringify(accReps),
@@ -1220,6 +1231,7 @@
 
           if (insertErr) throw insertErr;
 
+          activeGeneratedCode = codeToUse;
           document.getElementById("modal-code").textContent = codeToUse;
           document.getElementById("success-modal").classList.remove("hidden");
         } catch (err) {
@@ -1230,41 +1242,72 @@
         }
       }
 
+      // ✨ زر نسخ الكود مع إظهار رسالة تأكيد "تم النسخ"
+      function copyCodeFromModal() {
+        if (!activeGeneratedCode) return;
+        navigator.clipboard.writeText(activeGeneratedCode).then(() => {
+          showToast("📋 تم نسخ الكود بنجاح!");
+        }).catch(() => {
+          showToast("❌ تعذر نسخ الكود");
+        });
+      }
+
       function closeSuccessModal() {
         document.getElementById("success-modal").classList.add("hidden");
         location.reload();
       }
 
-      // دالة مساعدة لحساب الحد الأقصى لأي تاريخ بناءً على إعدادات الداشبورد واستثناءاتها
       function getCapacityForDate(dateStr) {
         if (!dateStr) return 12;
-        if (clinicSettings.overrides && clinicSettings.overrides[dateStr] !== undefined) {
+        if (
+          clinicSettings.overrides &&
+          clinicSettings.overrides[dateStr] !== undefined
+        ) {
           return parseInt(clinicSettings.overrides[dateStr], 10);
         }
         const dateObj = new Date(dateStr);
-        const dayNum = dateObj.getDay(); // 0: الأحد, 1: الاثنين ... 6: السبت
-        const dayMap = { 6: 'sat', 0: 'sun', 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu', 5: 'fri' };
+        const dayNum = dateObj.getDay();
+        const dayMap = {
+          6: "sat",
+          0: "sun",
+          1: "mon",
+          2: "tue",
+          3: "wed",
+          4: "thu",
+          5: "fri",
+        };
         const dayKey = dayMap[dayNum];
-        if (dayKey === 'fri') return 0; // افتراض الجمعة مغلق إذا لم يُذكر
-        return (dayKey && clinicSettings[dayKey] !== undefined) ? parseInt(clinicSettings[dayKey], 10) : 12;
+        if (dayKey === "fri") return 0;
+        return dayKey && clinicSettings[dayKey] !== undefined
+          ? parseInt(clinicSettings[dayKey], 10)
+          : 12;
       }
 
-      // تهيئة التقويم مع ربطه بإعدادات الداشبورد وقفل الأيام ممتلئة أو التي سعتها 0
       async function initCalendar() {
         try {
-          // جلب إعدادات العيادة وسعة الأيام من قاعدة البيانات (عبر كود CLINIC-SETTINGS)
-          const { data: settingsData } = await db.from('bookings').select('Product').eq('code', 'CLINIC-SETTINGS').single();
+          const { data: settingsData } = await db
+            .from("bookings")
+            .select("Product")
+            .eq("code", "CLINIC-SETTINGS")
+            .single();
           if (settingsData && settingsData.Product) {
             clinicSettings = JSON.parse(settingsData.Product);
           }
 
-          // جلب الحجوزات الحالية لحساب العدد الحالي بكل يوم وقفل الأيام المكتملة
-          const { data: bookingsData } = await db.from('bookings').select('Date, status').not('code', 'in', '(ADMIN-PASS,CLINIC-SETTINGS)');
+          const { data: bookingsData } = await db
+            .from("bookings")
+            .select("Date, status")
+            .not("code", "in", "(ADMIN-PASS,CLINIC-SETTINGS)");
           if (bookingsData) {
             allBookingsCounts = {};
-            bookingsData.forEach(b => {
-              if (b.Date && b.status !== 'rejected') {
-                allBookingsCounts[b.Date] = (allBookingsCounts[b.Date] || 0) + 1;
+            bookingsData.forEach((b) => {
+              if (
+                b.Date &&
+                b.status !== "rejected" &&
+                b.status !== "cancelled"
+              ) {
+                allBookingsCounts[b.Date] =
+                  (allBookingsCounts[b.Date] || 0) + 1;
               }
             });
           }
@@ -1288,33 +1331,22 @@
           disable: [
             function (date) {
               const year = date.getFullYear();
-              const month = String(date.getMonth() + 1).padStart(2, '0');
-              const dayStr = String(date.getDate()).padStart(2, '0');
+              const month = String(date.getMonth() + 1).padStart(2, "0");
+              const dayStr = String(date.getDate()).padStart(2, "0");
               const dateStr = `${year}-${month}-${dayStr}`;
 
-              // 1. التحقق إذا كان الحد الأقصى لهذا اليوم في الداشبورد = 0
               const maxLimit = getCapacityForDate(dateStr);
               if (maxLimit === 0) return true;
 
-              // 2. التحقق إذا بلغ عدد الحجوزات في هذا اليوم الحد الأقصى (ممتلئ)
               const currentBookedCount = allBookingsCounts[dateStr] || 0;
               if (currentBookedCount >= maxLimit) {
-                return true; // يتحول للرمادي ويصبح غير قابل للنقر
+                return true;
               }
 
               return false;
             },
           ],
         });
-      }
-
-      function formatTime(timeStr) {
-        if (!timeStr) return "";
-        const [hour] = timeStr.split(":");
-        const h = parseInt(hour, 10);
-        return h >= 12
-          ? `${h === 12 ? 12 : h - 12}:00 مساءً`
-          : `${h}:00 صباحاً`;
       }
 
       initCalendar();
